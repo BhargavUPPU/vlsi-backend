@@ -130,7 +130,7 @@ export class ProjectsService {
     });
   }
 
-  async findOne(id: number) {
+  async findOne(id: string) {
     const project = await this.prisma.projects.findUnique({
       where: { id },
       include: {
@@ -145,7 +145,7 @@ export class ProjectsService {
     return project;
   }
 
-  async update(id: number, updateProjectDto: UpdateProjectDto) {
+  async update(id: string, updateProjectDto: UpdateProjectDto) {
     // Check if project exists
     await this.findOne(id);
 
@@ -158,7 +158,7 @@ export class ProjectsService {
     });
   }
 
-  async remove(id: number) {
+  async remove(id: string) {
     // Check if project exists
     await this.findOne(id);
 
@@ -168,7 +168,7 @@ export class ProjectsService {
   }
 
   // Image handling methods
-  async addImage(projectId: number, imageBuffer: Buffer) {
+  async addImage(projectId: string, imageBuffer: Buffer) {
     // Check if project exists
     await this.findOne(projectId);
 
@@ -180,7 +180,7 @@ export class ProjectsService {
     });
   }
 
-  async getImage(imageId: number) {
+  async getImage(imageId: string) {
     const image = await this.prisma.projectImages.findUnique({
       where: { id: imageId },
     });
@@ -192,7 +192,7 @@ export class ProjectsService {
     return image;
   }
 
-  async removeImage(imageId: number) {
+  async removeImage(imageId: string) {
     const image = await this.prisma.projectImages.findUnique({
       where: { id: imageId },
     });

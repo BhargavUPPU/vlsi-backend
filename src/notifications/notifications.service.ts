@@ -7,19 +7,19 @@ export class NotificationsService {
   constructor(private prisma: PrismaService) {}
 
   create(createNotificationDto: CreateNotificationDto) {
-    return this.prisma.notification.create({ data: createNotificationDto });
+    console.log("createNotificationDto", createNotificationDto);
+    return this.prisma.runningNotifications.create({ data: createNotificationDto });
   }
 
   findAll() {
-    return this.prisma.notification.findMany({
-      orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
+    return this.prisma.runningNotifications.findMany({
+      orderBy: [{ createdAt: 'desc' }],
     });
   }
 
   findActive() {
-    return this.prisma.notification.findMany({
-      where: { isActive: true },
-      orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
+    return this.prisma.runningNotifications.findMany({
+      orderBy: [ { createdAt: 'desc' }],
     });
   }
 

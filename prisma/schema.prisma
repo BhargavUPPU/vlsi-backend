@@ -63,8 +63,6 @@ model clubMembers {
   memberShipId  String?
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
-  coreMemberId  String?
-  coreMember    coreMembers? @relation(fields: [coreMemberId], references: [id])
 }
 
 model coreMembers {
@@ -76,11 +74,10 @@ model coreMembers {
   rollNumber    String
   category      String
   teamCategory  String?
-  imageUrl      Bytes         @db.LongBlob
+  image         Bytes?         @db.LongBlob
   memberShipId  String?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
-  clubMember    clubMembers[]
 }
 
 model runningNotifications {
@@ -92,7 +89,7 @@ model runningNotifications {
 }
 
 model Projects {
-  id             Int             @id @default(autoincrement())
+  id             String             @id @default(cuid())
   title          String
   status         String
   Introduction   String          @db.Text
@@ -118,14 +115,14 @@ model Projects {
 }
 
 model ProjectImages {
-  id        Int      @id @default(autoincrement())
-  projectId Int
+  id        String      @id @default(cuid())
+  projectId String
   fileData  Bytes    @db.LongBlob
   project   Projects @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
 
 model Event {
-  id                    Int         @id @default(autoincrement())
+  id                    String  @id @default(cuid())
   title                 String
   description           String      @db.Text
   eventType             String?
@@ -230,8 +227,8 @@ model gatePyqs {
 }
 
 model EventFile {
-  id       Int   @id @default(autoincrement())
-  eventId  Int
+  id       String   @id @default(cuid())
+  eventId  String
   fileData Bytes @db.LongBlob
   event    Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
 }

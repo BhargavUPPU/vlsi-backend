@@ -9,24 +9,14 @@ export class CoreMembersService {
   constructor(private prisma: PrismaService) {}
 
   async create(createCoreMemberDto: CreateCoreMemberDto, imageBuffer?: Buffer) {
-    const data: any = { ...createCoreMemberDto };
-    if (imageBuffer) {
-      data.imageUrl = new Uint8Array(imageBuffer);
-    }
-
+     const data: any = { ...createCoreMemberDto };
     return this.prisma.coreMembers.create({
-      data: data,
-      include: {
-        clubMember: true,
-      },
+      data: { ...data, image: imageBuffer ? new Uint8Array(imageBuffer) : null },
     });
   }
 
   async findAll() {
     return this.prisma.coreMembers.findMany({
-      include: {
-        clubMember: true,
-      },
       orderBy: {
         createdAt: 'desc',
       },
@@ -36,9 +26,6 @@ export class CoreMembersService {
   async findOne(id: string) {
     const member = await this.prisma.coreMembers.findUnique({
       where: { id },
-      include: {
-        clubMember: true,
-      },
     });
 
     if (!member) {
@@ -53,15 +40,12 @@ export class CoreMembersService {
 
     const data: any = { ...updateCoreMemberDto };
     if (imageBuffer) {
-      data.imageUrl = new Uint8Array(imageBuffer);
+      data.image = new Uint8Array(imageBuffer);
     }
 
     return this.prisma.coreMembers.update({
       where: { id },
       data: data,
-      include: {
-        clubMember: true,
-      },
     });
   }
 
@@ -76,19 +60,16 @@ export class CoreMembersService {
   async getImage(id: string) {
     const member = await this.findOne(id);
     
-    if (!member.imageUrl) {
+    if (!member.image) {
       throw new NotFoundException(`Image not found for core member ${id}`);
     }
 
-    return member.imageUrl;
+    return member.image;
   }
 
   async findByCategory(category: string) {
     return this.prisma.coreMembers.findMany({
       where: { category },
-      include: {
-        clubMember: true,
-      },
       orderBy: {
         name: 'asc',
       },
@@ -98,9 +79,6 @@ export class CoreMembersService {
   async findByTeamCategory(teamCategory: string) {
     return this.prisma.coreMembers.findMany({
       where: { teamCategory },
-      include: {
-        clubMember: true,
-      },
       orderBy: {
         name: 'asc',
       },
@@ -110,9 +88,6 @@ export class CoreMembersService {
   async findByYear(year: string) {
     return this.prisma.coreMembers.findMany({
       where: { academicYear: year },
-      include: {
-        clubMember: true,
-      },
       orderBy: {
         name: 'asc',
       },

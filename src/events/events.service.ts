@@ -151,7 +151,7 @@ export class EventsService {
     });
   }
 
-  async findOne(id: number) {
+  async findOne(id: string) {
     const event = await this.prisma.event.findUnique({
       where: { id },
       include: {
@@ -166,7 +166,7 @@ export class EventsService {
     return event;
   }
 
-  async update(id: number, updateEventDto: any, files?: Array<Express.Multer.File>, certificateFile?: Express.Multer.File) {
+  async update(id: string, updateEventDto: any, files?: Array<Express.Multer.File>, certificateFile?: Express.Multer.File) {
     await this.findOne(id);
     console.log('Updating event', id, 'files:', files?.length);
 
@@ -236,7 +236,7 @@ export class EventsService {
     });
   }
 
-  async remove(id: number) {
+  async remove(id: string) {
     await this.findOne(id);
 
     return this.prisma.event.delete({
@@ -245,7 +245,7 @@ export class EventsService {
   }
 
   // Certificate handling
-  async uploadCertificate(eventId: number, certificateBuffer: Buffer) {
+  async uploadCertificate(eventId: string, certificateBuffer: Buffer) {
     await this.findOne(eventId);
 
     return this.prisma.event.update({
@@ -256,7 +256,7 @@ export class EventsService {
     });
   }
 
-  async getCertificate(eventId: number) {
+  async getCertificate(eventId: string) {
     const event = await this.findOne(eventId);
 
     if (!event.eventCertificateImage) {
@@ -267,7 +267,7 @@ export class EventsService {
   }
 
   // Event files handling
-  async addFile(eventId: number, fileBuffer: Buffer) {
+  async addFile(eventId: string, fileBuffer: Buffer) {
     await this.findOne(eventId);
 
     return this.prisma.eventFile.create({
@@ -278,7 +278,7 @@ export class EventsService {
     });
   }
 
-  async getFile(fileId: number) {
+  async getFile(fileId: string) {
     const file = await this.prisma.eventFile.findUnique({
       where: { id: fileId },
     });
@@ -290,7 +290,7 @@ export class EventsService {
     return file;
   }
 
-  async removeFile(fileId: number) {
+  async removeFile(fileId: string) {
     const file = await this.prisma.eventFile.findUnique({
       where: { id: fileId },
     });

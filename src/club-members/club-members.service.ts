@@ -11,17 +11,11 @@ export class ClubMembersService {
   async create(createClubMemberDto: CreateClubMemberDto) {
     return this.prisma.clubMembers.create({
       data: createClubMemberDto,
-      include: {
-        coreMember: true,
-      },
     });
   }
 
   async findAll() {
     return this.prisma.clubMembers.findMany({
-      include: {
-        coreMember: true,
-      },
       orderBy: {
         createdAt: 'desc',
       },
@@ -31,9 +25,6 @@ export class ClubMembersService {
   async findOne(id: string) {
     const member = await this.prisma.clubMembers.findUnique({
       where: { id },
-      include: {
-        coreMember: true,
-      },
     });
 
     if (!member) {
@@ -49,9 +40,6 @@ export class ClubMembersService {
     return this.prisma.clubMembers.update({
       where: { id },
       data: updateClubMemberDto ,
-      include: {
-        coreMember: true,
-      },
     });
   }
 
@@ -66,9 +54,6 @@ export class ClubMembersService {
   async findByYear(year: string) {
     return this.prisma.clubMembers.findMany({
       where: { academicYear: year },
-      include: {
-        coreMember: true,
-      },
       orderBy: {
         name: 'asc',
       },
@@ -78,9 +63,6 @@ export class ClubMembersService {
   async findBySection(section: string) {
     return this.prisma.clubMembers.findMany({
       where: { sectionBranch: section },
-      include: {
-        coreMember: true,
-      },
       orderBy: {
         name: 'asc',
       },

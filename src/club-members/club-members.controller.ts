@@ -14,7 +14,7 @@ import { CreateClubMemberDto } from './dto/create-club-member.dto';
 import { UpdateClubMemberDto } from './dto/update-club-member.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
-@Controller('club-members')
+@Controller('clubMembers')
 export class ClubMembersController {
   constructor(private readonly clubMembersService: ClubMembersService) {}
 

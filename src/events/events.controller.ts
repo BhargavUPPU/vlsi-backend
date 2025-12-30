@@ -61,7 +61,7 @@ export class EventsController {
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  findOne(@Param('id') id: string) {
     return this.eventsService.findOne(id);
   }
 
@@ -72,7 +72,7 @@ export class EventsController {
     { name: 'eventCertificateImage', maxCount: 1 },
   ]))
   update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() updateEventDto: any,
     @UploadedFiles() uploadedFiles: { files?: Express.Multer.File[], eventCertificateImage?: Express.Multer.File[] },
   ) {
@@ -84,7 +84,7 @@ export class EventsController {
 
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
+  remove(@Param('id') id: string) {
     return this.eventsService.remove(id);
   }
 
@@ -93,7 +93,7 @@ export class EventsController {
   @Post(':id/certificate')
   @UseInterceptors(FileInterceptor('certificate'))
   uploadCertificate(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
   ) {
     return this.eventsService.uploadCertificate(id, file.buffer);
@@ -101,7 +101,7 @@ export class EventsController {
 
   @Get(':id/certificate')
   async getCertificate(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Res({ passthrough: true }) res: Response,
   ) {
     const certificate = await this.eventsService.getCertificate(id);
@@ -117,7 +117,7 @@ export class EventsController {
   @Post(':id/files')
   @UseInterceptors(FileInterceptor('file'))
   uploadFile(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
   ) {
     return this.eventsService.addFile(id, file.buffer);
@@ -125,7 +125,7 @@ export class EventsController {
 
   @Get('files/:fileId')
   async getFile(
-    @Param('fileId', ParseIntPipe) fileId: number,
+    @Param('fileId') fileId: string,
     @Res({ passthrough: true }) res: Response,
   ) {
     const file = await this.eventsService.getFile(fileId);
@@ -138,7 +138,7 @@ export class EventsController {
 
   @UseGuards(JwtAuthGuard)
   @Delete('files/:fileId')
-  removeFile(@Param('fileId', ParseIntPipe) fileId: number) {
+  removeFile(@Param('fileId') fileId: string) {
     return this.eventsService.removeFile(fileId);
   }
 }

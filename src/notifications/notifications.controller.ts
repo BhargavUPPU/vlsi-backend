@@ -12,6 +12,7 @@ export class NotificationsController {
   @UseGuards(JwtAuthGuard)
   @Post()
   create(@Body() createNotificationDto: CreateNotificationDto) {
+    console.log(createNotificationDto);
     return this.notificationsService.create(createNotificationDto);
   }
 

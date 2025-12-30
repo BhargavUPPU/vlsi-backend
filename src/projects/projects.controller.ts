@@ -60,14 +60,14 @@ export class ProjectsController {
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  findOne(@Param('id') id: string) {
     return this.projectsService.findOne(id);
   }
 
   @UseGuards(JwtAuthGuard)
   @Patch(':id')
   update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() updateProjectDto: UpdateProjectDto,
   ) {
     return this.projectsService.update(id, updateProjectDto);
@@ -75,7 +75,7 @@ export class ProjectsController {
 
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
+  remove(@Param('id') id: string) {
     return this.projectsService.remove(id);
   }
 
@@ -84,7 +84,7 @@ export class ProjectsController {
   @Post(':id/images')
   @UseInterceptors(FileInterceptor('file'))
   async uploadImage(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
   ) {
     return this.projectsService.addImage(id, file.buffer);
@@ -92,7 +92,7 @@ export class ProjectsController {
 
   @Get('images/:imageId')
   async getImage(
-    @Param('imageId', ParseIntPipe) imageId: number,
+    @Param('imageId') imageId: string,
     @Res({ passthrough: true }) res: Response,
   ) {
     const image = await this.projectsService.getImage(imageId);
@@ -105,7 +105,7 @@ export class ProjectsController {
 
   @UseGuards(JwtAuthGuard)
   @Delete('images/:imageId')
-  removeImage(@Param('imageId', ParseIntPipe) imageId: number) {
+  removeImage(@Param('imageId') imageId: string) {
     return this.projectsService.removeImage(imageId);
   }
 }

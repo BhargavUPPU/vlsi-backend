@@ -19,7 +19,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 
-@Controller('core-members')
+@Controller('coreMembers')
 export class CoreMembersController {
   constructor(private readonly coreMembersService: CoreMembersService) {}
 

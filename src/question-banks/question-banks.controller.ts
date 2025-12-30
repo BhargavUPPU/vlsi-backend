@@ -13,7 +13,7 @@ import { CreateQuestionBankDto } from './dto/create-question-bank.dto';
 import { UpdateQuestionBankDto } from './dto/update-question-bank.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
-@Controller('question-banks')
+@Controller('questionBanks')
 export class QuestionBanksController {
   constructor(private readonly questionBanksService: QuestionBanksService) {}
 
