@@ -1,0 +1,264 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+  SUPERADMIN
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id       String    @id @default(cuid())
+  email    String?   @unique
+  name     String?
+  password String?
+  year     String?
+  role     UserRole  @default(USER)
+  accounts Account[]
+  sessions Session[]
+}
+
+model clubMembers {
+  id            String       @id @default(cuid())
+  name          String
+  academicYear  String
+  sectionBranch String
+  rollNumber    String
+  memberShipId  String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  coreMemberId  String?
+  coreMember    coreMembers? @relation(fields: [coreMemberId], references: [id])
+}
+
+model coreMembers {
+  id            String        @id @default(cuid())
+  name          String
+  academicYear  String
+  sectionBranch String
+  portfolio     String
+  rollNumber    String
+  category      String
+  teamCategory  String?
+  imageUrl      Bytes         @db.LongBlob
+  memberShipId  String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  clubMember    clubMembers[]
+}
+
+model runningNotifications {
+  id        String   @id @default(cuid())
+  message   String   @db.Text
+  link      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Projects {
+  id             Int             @id @default(autoincrement())
+  title          String
+  status         String
+  Introduction   String          @db.Text
+  academicYear   String
+  Mentor         String
+  category       String
+  Members        Json?
+  Statement      String?         @db.Text
+  Abstract       String?         @db.Text
+  Conclusion     String          @db.Text
+  Results        String?         @db.Text
+  futureScope    String?         @db.Text
+  referenceLinks Json?
+  Tools          Json?
+  Link           String?
+  createdBy      String?
+  startDate      String?
+  endDate        String?
+  Methodology    String?         @db.Text
+  images         ProjectImages[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model ProjectImages {
+  id        Int      @id @default(autoincrement())
+  projectId Int
+  fileData  Bytes    @db.LongBlob
+  project   Projects @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model Event {
+  id                    Int         @id @default(autoincrement())
+  title                 String
+  description           String      @db.Text
+  eventType             String?
+  aboutEvent            String?     @db.Text
+  eventRegistrationLink String?
+  eventPdfLink          String?
+  eventVideoLink        String?
+  noOfParticipants      Int?
+  eventDate             DateTime
+  eventHighlights       Json
+  studentCoordinators   Json
+  facultyCoordinators   Json
+  status                String
+  speakerName           String?
+  speakerDescription    String?     @db.Text
+  speakerHighlights     Json
+  eventCertificateImage Bytes?      @db.LongBlob
+  files                 EventFile[]
+}
+
+model QuestionBank {
+  id        String   @id @default(cuid())
+  topicName String
+  subject   String
+  link      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TextBook {
+  id          String   @id @default(cuid())
+  name        String
+  description String   @db.Text
+  subject     String
+  author      String
+  link        String
+  image       Bytes?   @db.LongBlob
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model nptelLecture {
+  id            String   @id @default(cuid())
+  courseName    String
+  professorName String
+  image         Bytes?   @db.LongBlob
+  link          String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model placementPrep {
+  id        String   @id @default(cuid())
+  name      String
+  image     Bytes?   @db.LongBlob
+  link      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model vlsiMaterial {
+  id        String   @id @default(cuid())
+  name      String
+  category  String
+  link      String
+  image     Bytes?   @db.LongBlob
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Test {
+  id            String   @id @default(cuid())
+  title         String
+  subject       String
+  type          String
+  status        String
+  noOfQuestions Int
+  duration      Int
+  examLink      String
+  date          DateTime
+  description   String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model magazine {
+  id        String   @id @default(cuid())
+  title     String
+  link      String
+  image     Bytes?   @db.LongBlob
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model gatePyqs {
+  id        String   @id @default(cuid())
+  year      Int
+  link      String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model EventFile {
+  id       Int   @id @default(autoincrement())
+  eventId  Int
+  fileData Bytes @db.LongBlob
+  event    Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  title     String
+  message   String   @db.Text
+  link      String?
+  isActive  Boolean  @default(true)
+  priority  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model TeamPhoto {
+  id           String   @id @default(cuid())
+  academicYear String   @unique
+  imageData    Bytes    @db.LongBlob
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
