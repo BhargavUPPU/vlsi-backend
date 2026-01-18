@@ -5,12 +5,40 @@ import { PrismaService } from '../prisma/prisma.service';
 export class GatePyqsService {
   constructor(private prisma: PrismaService) {}
 
-  create(data: { year: number; link: string; name: string }) {
-    return this.prisma.gatePyqs.create({ data });
+  create(data: { year: number | string; link: string; name: string, category?: string }, imageBuffer?: Buffer) {
+    return this.prisma.gatePyqs.create({ 
+      data: { 
+        ...data, 
+        year: typeof data.year === 'string' ? parseInt(data.year) : data.year,
+        image: imageBuffer ? new Uint8Array(imageBuffer) : null 
+      } 
+    });
   }
 
-  findAll() {
-    return this.prisma.gatePyqs.findMany({ orderBy: { year: 'desc' } });
+  async findAll(query?: { search?: string; category?: string; page?: string; limit?: string }) {
+    const page = parseInt(query?.page || '1');
+    const limit = parseInt(query?.limit || '10');
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (query?.category && query.category !== 'All') {
+      where.category = query.category;
+    }
+    if (query?.search) {
+      where.name = { contains: query.search };
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.gatePyqs.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { year: 'desc' },
+      }),
+      this.prisma.gatePyqs.count({ where }),
+    ]);
+
+    return { data, total, page, limit };
   }
 
   async findOne(id: string) {
@@ -19,9 +47,18 @@ export class GatePyqsService {
     return item;
   }
 
-  async update(id: string, data: any) {
+  async update(id: string, data: any, imageBuffer?: Buffer) {
     await this.findOne(id);
-    return this.prisma.gatePyqs.update({ where: { id }, data });
+    const updateData: any = { ...data };
+    if (data.year) updateData.year = parseInt(data.year);
+    if (imageBuffer) updateData.image = new Uint8Array(imageBuffer);
+    return this.prisma.gatePyqs.update({ where: { id }, data: updateData });
+  }
+
+  async getImage(id: string) {
+    const item = await this.findOne(id);
+    if (!item.image) throw new NotFoundException(`Image not found`);
+    return item.image;
   }
 
   async remove(id: string) {

@@ -1,10 +1,11 @@
 import {
   Controller, Get, Post, Body, Patch, Param, Delete, UseGuards,
-  UseInterceptors, UploadedFile, Res, StreamableFile,
+  UseInterceptors, UploadedFile, Res, StreamableFile, Query,
 } from '@nestjs/common';
 import { NptelLecturesService } from './nptel-lectures.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { FileInterceptor } from '@nestjs/platform-express';
+import {SuperAdminGuard} from '../auth/guards/superadmin.guard';
+import { FileInterceptor } from   '@nestjs/platform-express';
 import { Response } from 'express';
 
 @Controller('nptelLectures')
@@ -19,8 +20,8 @@ export class NptelLecturesController {
   }
 
   @Get()
-  findAll() {
-    return this.service.findAll();
+  findAll(@Query() query?: { search?: string; category?: string; page?: string; limit?: string }) {
+    return this.service.findAll(query);
   }
 
   @Get(':id')
@@ -42,7 +43,7 @@ export class NptelLecturesController {
     return this.service.update(id, data, file?.buffer);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard,SuperAdminGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.service.remove(id);

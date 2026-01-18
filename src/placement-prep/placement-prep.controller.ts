@@ -11,9 +11,11 @@ import {
   UseInterceptors,
   Res,
   StreamableFile,
+  Query,
 } from '@nestjs/common';
 import { PlacementPrepService } from './placement-prep.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import {SuperAdminGuard} from '../auth/guards/superadmin.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 
@@ -34,8 +36,8 @@ export class PlacementPrepController {
   }
 
   @Get()
-  findAll() {
-    return this.placementPrepService.findAll();
+  findAll(@Query() query?: { search?: string; category?: string; page?: string; limit?: string }) {
+    return this.placementPrepService.findAll(query);
   }
 
   @Get(':id')
@@ -55,7 +57,7 @@ export class PlacementPrepController {
     return this.placementPrepService.update(id, updateDto, image?.buffer);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard,SuperAdminGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.placementPrepService.remove(id);

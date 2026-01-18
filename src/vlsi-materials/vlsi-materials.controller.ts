@@ -15,6 +15,7 @@ import {
 } from '@nestjs/common';
 import { VlsiMaterialsService } from './vlsi-materials.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import {SuperAdminGuard} from '../auth/guards/superadmin.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 
@@ -35,11 +36,8 @@ export class VlsiMaterialsController {
   }
 
   @Get()
-  findAll(@Query('category') category?: string) {
-    if (category) {
-      return this.vlsiMaterialsService.findByCategory(category);
-    }
-    return this.vlsiMaterialsService.findAll();
+  findAll(@Query() query?: { search?: string; category?: string; page?: string; limit?: string }) {
+    return this.vlsiMaterialsService.findAll(query);
   }
 
   @Get(':id')
@@ -59,7 +57,7 @@ export class VlsiMaterialsController {
     return this.vlsiMaterialsService.update(id, updateDto, image?.buffer);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard,SuperAdminGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.vlsiMaterialsService.remove(id);

@@ -15,10 +15,33 @@ export class TextbooksService {
     });
   }
 
-  findAll() {
-    return this.prisma.textBook.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
+  async findAll(query?: { search?: string; category?: string; page?: string; limit?: string }) {
+    const page = parseInt(query?.page || '1');
+    const limit = parseInt(query?.limit || '10');
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (query?.category && query.category !== 'All') {
+      where.category = query.category;
+    }
+    if (query?.search) {
+      where.OR = [
+        { name: { contains: query.search } },
+        { author: { contains: query.search } },
+      ];
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.textBook.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.textBook.count({ where }),
+    ]);
+
+    return { data, total, page, limit };
   }
 
   async findOne(id: string) {

@@ -108,4 +108,23 @@ export class AuthController {
       throw new UnauthorizedException('Unable to get profile');
     }
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('change-password')
+  async changePassword(@Request() req, @Body() body: { oldPassword: string; newPassword: string }) {
+    try {
+      if (!body.oldPassword || !body.newPassword) {
+        throw new BadRequestException('Old password and new password are required');
+      }
+
+      await this.authService.changePassword(req.user.id, body.oldPassword, body.newPassword);
+      
+      return { message: 'Password changed successfully' };
+    } catch (error) {
+      if (error.status) {
+        throw error;
+      }
+      throw new BadRequestException('Failed to change password');
+    }
+  }
 }

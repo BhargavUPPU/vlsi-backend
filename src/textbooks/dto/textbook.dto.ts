@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class CreateTextbookDto {
   @IsString()
@@ -20,6 +20,10 @@ export class CreateTextbookDto {
   @IsString()
   @IsNotEmpty()
   link: string;
+
+  @IsString()
+  @IsOptional()
+  category?: string;
 }
 
 export class UpdateTextbookDto {
@@ -28,4 +32,5 @@ export class UpdateTextbookDto {
   subject?: string;
   author?: string;
   link?: string;
+  category?: string;
 }

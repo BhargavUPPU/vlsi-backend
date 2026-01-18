@@ -31,5 +31,9 @@ export class CreateCoreMemberDto {
 
   @IsOptional()
   @IsString()
+  description?: string;
+
+  @IsOptional()
+  @IsString()
   memberShipId?: string;
 }

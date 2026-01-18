@@ -12,8 +12,33 @@ export class NptelLecturesService {
     });
   }
 
-  findAll() {
-    return this.prisma.nptelLecture.findMany({ orderBy: { createdAt: 'desc' } });
+  async findAll(query?: { search?: string; category?: string; page?: string; limit?: string }) {
+    const page = parseInt(query?.page || '1');
+    const limit = parseInt(query?.limit || '10');
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (query?.category && query.category !== 'All') {
+      where.category = query.category;
+    }
+    if (query?.search) {
+      where.OR = [
+        { courseName: { contains: query.search } },
+        { professorName: { contains: query.search } },
+      ];
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.nptelLecture.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.nptelLecture.count({ where }),
+    ]);
+
+    return { data, total, page, limit };
   }
 
   async findOne(id: string) {

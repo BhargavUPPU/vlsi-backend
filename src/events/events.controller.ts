@@ -19,6 +19,7 @@ import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { SuperAdminGuard } from '../auth/guards/superadmin.guard';
 import { FileInterceptor, FilesInterceptor, FileFieldsInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 
@@ -82,7 +83,7 @@ export class EventsController {
     return this.eventsService.update(id, updateEventDto, files, certificateFile);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, SuperAdminGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.eventsService.remove(id);
@@ -136,7 +137,7 @@ export class EventsController {
     return new StreamableFile(Buffer.from(file.fileData));
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, SuperAdminGuard)
   @Delete('files/:fileId')
   removeFile(@Param('fileId') fileId: string) {
     return this.eventsService.removeFile(fileId);

@@ -44,14 +44,19 @@ model Session {
 }
 
 model User {
-  id       String    @id @default(cuid())
-  email    String?   @unique
-  name     String?
-  password String?
-  year     String?
-  role     UserRole  @default(USER)
-  accounts Account[]
-  sessions Session[]
+  id                    String    @id @default(cuid())
+  email                 String?   @unique
+  name                  String?
+  password              String?
+  year                  String?
+  role                  UserRole  @default(USER)
+  requirePasswordChange Boolean   @default(false)
+  lastPasswordChange    DateTime?
+  createdBy             String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  accounts              Account[]
+  sessions              Session[]
 }
 
 model clubMembers {
@@ -74,7 +79,8 @@ model coreMembers {
   rollNumber    String
   category      String
   teamCategory  String?
-  image         Bytes?         @db.LongBlob
+  description   String?       @db.Text
+  image         Bytes?        @db.LongBlob
   memberShipId  String?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
@@ -147,7 +153,9 @@ model QuestionBank {
   id        String   @id @default(cuid())
   topicName String
   subject   String
+  category  String?  @default("General")
   link      String
+  image     Bytes?   @db.LongBlob
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -157,6 +165,7 @@ model TextBook {
   name        String
   description String   @db.Text
   subject     String
+  category    String?  @default("General")
   author      String
   link        String
   image       Bytes?   @db.LongBlob
@@ -168,6 +177,7 @@ model nptelLecture {
   id            String   @id @default(cuid())
   courseName    String
   professorName String
+  category      String?  @default("General")
   image         Bytes?   @db.LongBlob
   link          String
   createdAt     DateTime @default(now())
@@ -177,6 +187,7 @@ model nptelLecture {
 model placementPrep {
   id        String   @id @default(cuid())
   name      String
+  category  String?  @default("General")
   image     Bytes?   @db.LongBlob
   link      String
   createdAt DateTime @default(now())
@@ -211,6 +222,7 @@ model Test {
 model magazine {
   id        String   @id @default(cuid())
   title     String
+  category  String?  @default("General")
   link      String
   image     Bytes?   @db.LongBlob
   createdAt DateTime @default(now())
@@ -222,6 +234,8 @@ model gatePyqs {
   year      Int
   link      String
   name      String
+  category  String?  @default("General")
+  image     Bytes?   @db.LongBlob
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -253,9 +267,105 @@ model VerificationToken {
 }
 
 model TeamPhoto {
-  id           String   @id @default(cuid())
-  academicYear String   @unique
-  imageData    Bytes    @db.LongBlob
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id           String           @id @default(cuid())
+  academicYear String           @unique
+  images       TeamPhotoImage[]
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+}
+
+model TeamPhotoImage {
+  id          String    @id @default(cuid())
+  teamPhotoId String
+  imageData   Bytes     @db.LongBlob
+  teamPhoto   TeamPhoto @relation(fields: [teamPhotoId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+}
+
+model Announcement {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @db.Text
+  date        String   // e.g., "Today", "22-23 Oct"
+  time        String   // e.g., "2:30pm"
+  venue       String
+  priority    Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+enum AchievementType {
+  HERO_CAROUSEL
+  CLUB_MILESTONE
+  SUMMARY_STAT
+  PROUD_MOMENT
+  AWARD_HIGHLIGHT
+  GALLERY_IMAGE
+}
+
+model Achievement {
+  id          String             @id @default(cuid())
+  type        AchievementType
+  title       String?            @db.Text
+  description String?            @db.Text
+  value       String?            // For milestones/stats (e.g., "50+")
+  mainImage   Bytes?             @db.LongBlob
+  images      AchievementImage[] // For carousels/galleries
+  priority    Int                @default(0)
+  isActive    Boolean            @default(true)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+}
+
+model AchievementImage {
+  id            String      @id @default(cuid())
+  achievementId String
+  imageData     Bytes       @db.LongBlob
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+}
+
+enum PhotoGalleryCategory {
+  CLUB_HIGHLIGHTS
+  PHOTO_GALLERY
+  BOTH
+}
+
+model PhotoGallery {
+  id          String               @id @default(cuid())
+  title       String
+  description String?              @db.Text
+  category    PhotoGalleryCategory
+  priority    Int                  @default(0)
+  isActive    Boolean              @default(true)
+  images      PhotoGalleryImage[]
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+}
+
+
+model PhotoGalleryImage {
+  id             String       @id @default(cuid())
+  photoGalleryId String
+  imageData      Bytes        @db.LongBlob
+  caption        String?
+  displayOrder   Int          @default(0)
+  photoGallery   PhotoGallery @relation(fields: [photoGalleryId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+}
+
+model Milestone {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @db.Text
+  date        DateTime // The milestone date
+  icon        String?  // Icon name (e.g., "rocket", "award", "users")
+  color       String   @default("bg-blue-500") // Tailwind color class
+  bgColor     String   @default("bg-blue-50")  // Background color class
+  image       Bytes?   @db.LongBlob // Optional custom image
+  category    String?  @default("general") // e.g., "achievement", "event", "partnership"
+  priority    Int      @default(0) // For ordering
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

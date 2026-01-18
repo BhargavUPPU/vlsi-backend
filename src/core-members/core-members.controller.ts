@@ -16,6 +16,7 @@ import { CoreMembersService } from './core-members.service';
 import { CreateCoreMemberDto } from './dto/create-core-member.dto';
 import { UpdateCoreMemberDto } from './dto/update-core-member.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import {SuperAdminGuard} from '../auth/guards/superadmin.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 
@@ -89,7 +90,7 @@ export class CoreMembersController {
     );
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard,SuperAdminGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.coreMembersService.remove(id);

@@ -4,6 +4,7 @@ import {
 import { TestsService } from './tests.service';
 import { CreateTestDto, UpdateTestDto } from './dto/test.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import {SuperAdminGuard} from '../auth/guards/superadmin.guard';
 
 @Controller('tests')
 export class TestsController {
@@ -33,7 +34,7 @@ export class TestsController {
     return this.testsService.update(id, updateTestDto);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard,SuperAdminGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.testsService.remove(id);

@@ -1,10 +1,11 @@
 import {
   Controller, Get, Post, Body, Patch, Param, Delete, UseGuards,
-  UseInterceptors, UploadedFile, Res, StreamableFile,
+  UseInterceptors, UploadedFile, Res, StreamableFile, Query,
 } from '@nestjs/common';
 import { TextbooksService } from './textbooks.service';
 import { CreateTextbookDto, UpdateTextbookDto } from './dto/textbook.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import {SuperAdminGuard} from '../auth/guards/superadmin.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 
@@ -20,8 +21,8 @@ export class TextbooksController {
   }
 
   @Get()
-  findAll() {
-    return this.textbooksService.findAll();
+  findAll(@Query() query?: { search?: string; category?: string; page?: string; limit?: string }) {
+    return this.textbooksService.findAll(query);
   }
 
   @Get('subject/:subject')
@@ -48,7 +49,7 @@ export class TextbooksController {
     return this.textbooksService.update(id, dto, file?.buffer);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard,SuperAdminGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.textbooksService.remove(id);

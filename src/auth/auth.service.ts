@@ -158,4 +158,94 @@ export class AuthService {
       throw new UnauthorizedException('Invalid refresh token');
     }
   }
+
+  /**
+   * Validate password meets security requirements
+   */
+  validatePasswordRequirements(password: string): void {
+    if (password.length < 8) {
+      throw new BadRequestException('Password must be at least 8 characters long');
+    }
+
+    if (!/[A-Z]/.test(password)) {
+      throw new BadRequestException('Password must contain at least one uppercase letter');
+    }
+
+    if (!/[a-z]/.test(password)) {
+      throw new BadRequestException('Password must contain at least one lowercase letter');
+    }
+
+    if (!/[0-9]/.test(password)) {
+      throw new BadRequestException('Password must contain at least one number');
+    }
+
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+      throw new BadRequestException('Password must contain at least one special character');
+    }
+
+    // Check against common passwords
+    const commonPasswords = ['password', 'password123', '12345678', 'qwerty123', 'admin123'];
+    if (commonPasswords.some(common => password.toLowerCase().includes(common))) {
+      throw new BadRequestException('Password is too common. Please choose a stronger password');
+    }
+  }
+
+  /**
+   * Change user password (user changes own password)
+   */
+  async changePassword(userId: string, oldPassword: string, newPassword: string): Promise<void> {
+    // Validate new password requirements
+    this.validatePasswordRequirements(newPassword);
+
+    // Get user with password
+    const user = await this.usersService.findById(userId);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    // Verify old password
+    const isValidOldPassword = await bcrypt.compare(oldPassword, user.password || '');
+    if (!isValidOldPassword) {
+      throw new UnauthorizedException('Current password is incorrect');
+    }
+
+    // Check that new password is different
+    const isSameAsOld = await bcrypt.compare(newPassword, user.password || '');
+    if (isSameAsOld) {
+      throw new BadRequestException('New password must be different from current password');
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    // Update password and clear requirePasswordChange flag
+    await this.usersService.updatePassword(userId, hashedPassword);
+  }
+
+  /**
+   * Generate a cryptographically secure temporary password
+   */
+  generateTempPassword(): string {
+    const length = 12;
+    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+    const numbers = '0123456789';
+    const special = '!@#$%^&*';
+    const all = uppercase + lowercase + numbers + special;
+
+    // Ensure at least one of each type
+    let password = '';
+    password += uppercase[Math.floor(Math.random() * uppercase.length)];
+    password += lowercase[Math.floor(Math.random() * lowercase.length)];
+    password += numbers[Math.floor(Math.random() * numbers.length)];
+    password += special[Math.floor(Math.random() * special.length)];
+
+    // Fill the rest randomly
+    for (let i = password.length; i < length; i++) {
+      password += all[Math.floor(Math.random() * all.length)];
+    }
+
+    // Shuffle the password
+    return password.split('').sort(() => Math.random() - 0.5).join('');
+  }
 }

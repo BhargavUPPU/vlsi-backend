@@ -21,6 +21,10 @@ import { MagazinesModule } from './magazines/magazines.module';
 import { TestsModule } from './tests/tests.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { TeamPhotosModule } from './team-photos/team-photos.module';
+import { AnnouncementsModule } from './announcements/announcements.module';
+import { AchievementsModule } from './achievements/achievements.module';
+import { PhotoGalleryModule } from './photo-gallery/photo-gallery.module';
+import { MilestonesModule } from './milestones/milestones.module';
 
 @Module({
   imports: [
@@ -29,7 +33,25 @@ import { TeamPhotosModule } from './team-photos/team-photos.module';
     }),
     PrismaModule,
     UsersModule,
-    AuthModule, ClubMembersModule, CoreMembersModule, ProjectsModule, EventsModule, QuestionBanksModule, TextbooksModule, NptelLecturesModule, PlacementPrepModule, VlsiMaterialsModule, GatePyqsModule, MagazinesModule, TestsModule, NotificationsModule, TeamPhotosModule
+    AuthModule,
+    ClubMembersModule,
+    CoreMembersModule,
+    ProjectsModule,
+    EventsModule,
+    QuestionBanksModule,
+    TextbooksModule,
+    NptelLecturesModule,
+    PlacementPrepModule,
+    VlsiMaterialsModule,
+    GatePyqsModule,
+    MagazinesModule,
+    TestsModule,
+    NotificationsModule,
+    TeamPhotosModule,
+    AnnouncementsModule,
+    AchievementsModule,
+    PhotoGalleryModule,
+    MilestonesModule
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

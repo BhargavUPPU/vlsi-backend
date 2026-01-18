@@ -11,8 +11,30 @@ export class VlsiMaterialsService {
     });
   }
 
-  findAll() {
-    return this.prisma.vlsiMaterial.findMany({ orderBy: { createdAt: 'desc' } });
+  async findAll(query?: { search?: string; category?: string; page?: string; limit?: string }) {
+    const page = parseInt(query?.page || '1');
+    const limit = parseInt(query?.limit || '10');
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (query?.category && query.category !== 'All') {
+      where.category = query.category;
+    }
+    if (query?.search) {
+      where.name = { contains: query.search };
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.vlsiMaterial.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.vlsiMaterial.count({ where }),
+    ]);
+
+    return { data, total, page, limit };
   }
 
   async findOne(id: string) {

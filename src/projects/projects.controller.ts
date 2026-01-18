@@ -19,6 +19,7 @@ import { ProjectsService } from './projects.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { SuperAdminGuard } from '../auth/guards/superadmin.guard';
 import { FileInterceptor, FileFieldsInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 
@@ -73,7 +74,7 @@ export class ProjectsController {
     return this.projectsService.update(id, updateProjectDto);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, SuperAdminGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.projectsService.remove(id);
@@ -103,7 +104,7 @@ export class ProjectsController {
     return new StreamableFile(Buffer.from(image.fileData));
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, SuperAdminGuard)
   @Delete('images/:imageId')
   removeImage(@Param('imageId') imageId: string) {
     return this.projectsService.removeImage(imageId);

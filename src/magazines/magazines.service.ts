@@ -11,8 +11,30 @@ export class MagazinesService {
     });
   }
 
-  findAll() {
-    return this.prisma.magazine.findMany({ orderBy: { createdAt: 'desc' } });
+  async findAll(query?: { search?: string; category?: string; page?: string; limit?: string }) {
+    const page = parseInt(query?.page || '1');
+    const limit = parseInt(query?.limit || '10');
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (query?.category && query.category !== 'All') {
+      where.category = query.category;
+    }
+    if (query?.search) {
+      where.title = { contains: query.search };
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.magazine.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.magazine.count({ where }),
+    ]);
+
+    return { data, total, page, limit };
   }
 
   async findOne(id: string) {
