@@ -7,7 +7,10 @@ import { UpdateMilestoneDto } from './dto/update-milestone.dto';
 export class MilestonesService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createMilestoneDto: CreateMilestoneDto, imageFile?: Express.Multer.File) {
+  async create(
+    createMilestoneDto: CreateMilestoneDto,
+    imageFile?: Express.Multer.File,
+  ) {
     const data: any = {
       ...createMilestoneDto,
       date: new Date(createMilestoneDto.date),
@@ -21,7 +24,11 @@ export class MilestonesService {
     return this.prisma.milestone.create({ data });
   }
 
-  async findAll(filters?: { year?: number; category?: string; isActive?: boolean }) {
+  async findAll(filters?: {
+    year?: number;
+    category?: string;
+    isActive?: boolean;
+  }) {
     const where: any = {};
 
     // Filter by active status (default to true for public view)
@@ -46,11 +53,11 @@ export class MilestonesService {
       where.category = filters.category;
     }
 
-    return this.prisma.milestone.findMany({
+    const milestones = await this.prisma.milestone.findMany({
       where,
       orderBy: [
         { priority: 'desc' }, // Higher priority first
-        { date: 'desc' },     // Then by date descending
+        { date: 'desc' }, // Then by date descending
       ],
       select: {
         id: true,
@@ -63,11 +70,18 @@ export class MilestonesService {
         category: true,
         priority: true,
         isActive: true,
+        image: true, // Include to check existence
         createdAt: true,
         updatedAt: true,
-        // Exclude image blob from list view for performance
       },
     });
+
+    // Transform response to exclude image blob but include hasImage flag
+    return milestones.map((milestone) => ({
+      ...milestone,
+      image: undefined, // Remove the blob data
+      hasImage: milestone.image !== null, // Add hasImage flag
+    }));
   }
 
   async findOne(id: string) {
@@ -82,7 +96,11 @@ export class MilestonesService {
     return milestone;
   }
 
-  async update(id: string, updateMilestoneDto: UpdateMilestoneDto, imageFile?: Express.Multer.File) {
+  async update(
+    id: string,
+    updateMilestoneDto: UpdateMilestoneDto,
+    imageFile?: Express.Multer.File,
+  ) {
     await this.findOne(id); // Ensure milestone exists
 
     const data: any = { ...updateMilestoneDto };
@@ -157,7 +175,7 @@ export class MilestonesService {
       orderBy: { date: 'desc' },
     });
 
-    const years = [...new Set(milestones.map(m => m.date.getFullYear()))];
+    const years = [...new Set(milestones.map((m) => m.date.getFullYear()))];
     return years.sort((a, b) => b - a); // Descending order
   }
 
@@ -170,7 +188,7 @@ export class MilestonesService {
     });
 
     return milestones
-      .map(m => m.category)
+      .map((m) => m.category)
       .filter((category): category is string => category !== null);
   }
 }

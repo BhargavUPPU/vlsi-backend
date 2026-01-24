@@ -147,9 +147,11 @@ vlsi-backend/
 ### Authentication
 
 #### POST /auth/register
+
 Register a new user
 
 **Request Body:**
+
 ```json
 {
   "email": "user@example.com",
@@ -160,6 +162,7 @@ Register a new user
 ```
 
 **Response:**
+
 ```json
 {
   "id": "clx...",
@@ -170,9 +173,11 @@ Register a new user
 ```
 
 #### POST /auth/login
+
 Login with credentials
 
 **Request Body:**
+
 ```json
 {
   "email": "user@example.com",
@@ -181,6 +186,7 @@ Login with credentials
 ```
 
 **Response:**
+
 ```json
 {
   "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -195,14 +201,17 @@ Login with credentials
 ```
 
 #### GET /auth/profile
+
 Get current user profile (Protected)
 
 **Headers:**
+
 ```
 Authorization: Bearer <access_token>
 ```
 
 **Response:**
+
 ```json
 {
   "id": "clx...",
@@ -215,7 +224,7 @@ Authorization: Bearer <access_token>
 
 - `GET /users` - Get all users (Admin only)
 - `GET /users/:id` - Get user by ID
-- `PATCH /users/:id` - Update user
+- `Put /users/:id` - Update user
 - `DELETE /users/:id` - Delete user
 
 ### Club Members
@@ -223,7 +232,7 @@ Authorization: Bearer <access_token>
 - `GET /club-members` - Get all club members
 - `GET /club-members/:id` - Get club member by ID
 - `POST /club-members` - Create club member (Admin)
-- `PATCH /club-members/:id` - Update club member
+- `Put /club-members/:id` - Update club member
 - `DELETE /club-members/:id` - Delete club member
 
 ### Core Members
@@ -231,7 +240,7 @@ Authorization: Bearer <access_token>
 - `GET /core-members` - Get all core members
 - `GET /core-members/:id` - Get core member by ID
 - `POST /core-members` - Create core member (Admin)
-- `PATCH /core-members/:id` - Update core member
+- `Put /core-members/:id` - Update core member
 - `DELETE /core-members/:id` - Delete core member
 
 ### Projects
@@ -239,7 +248,7 @@ Authorization: Bearer <access_token>
 - `GET /projects` - Get all projects
 - `GET /projects/:id` - Get project by ID
 - `POST /projects` - Create project (Admin)
-- `PATCH /projects/:id` - Update project
+- `Put /projects/:id` - Update project
 - `DELETE /projects/:id` - Delete project
 
 ### Events
@@ -247,12 +256,13 @@ Authorization: Bearer <access_token>
 - `GET /events` - Get all events
 - `GET /events/:id` - Get event by ID
 - `POST /events` - Create event (Admin)
-- `PATCH /events/:id` - Update event
+- `Put /events/:id` - Update event
 - `DELETE /events/:id` - Delete event
 
 ### Educational Resources
 
 Similar CRUD endpoints for:
+
 - `/question-banks`
 - `/textbooks`
 - `/nptel-lectures`
@@ -266,7 +276,7 @@ Similar CRUD endpoints for:
 - `GET /tests` - Get all tests
 - `GET /tests/:id` - Get test by ID
 - `POST /tests` - Create test (Admin)
-- `PATCH /tests/:id` - Update test
+- `Put /tests/:id` - Update test
 - `DELETE /tests/:id` - Delete test
 
 ### Notifications
@@ -274,7 +284,7 @@ Similar CRUD endpoints for:
 - `GET /notifications` - Get all notifications
 - `GET /notifications/active` - Get active notifications
 - `POST /notifications` - Create notification (Admin)
-- `PATCH /notifications/:id` - Update notification
+- `Put /notifications/:id` - Update notification
 - `DELETE /notifications/:id` - Delete notification
 
 ### Team Photos
@@ -287,11 +297,13 @@ Similar CRUD endpoints for:
 ## Database Models
 
 ### User Roles
+
 - `USER` - Regular user
 - `ADMIN` - Administrator
 - `SUPERADMIN` - Super administrator
 
 ### Models (19 total)
+
 1. User
 2. Account (OAuth)
 3. Session
@@ -362,6 +374,7 @@ Opens at `http://localhost:5555`
 ## Next Steps
 
 ### Backend
+
 1. ✅ Prisma schema migrated
 2. ✅ Core modules generated (Auth, Users)
 3. ✅ All resource modules scaffolded
@@ -374,6 +387,7 @@ Opens at `http://localhost:5555`
 10. ⏳ Add error handling and logging
 
 ### Integration
+
 1. Test auth endpoints with Postman
 2. Create database migrations
 3. Seed initial data
@@ -383,17 +397,21 @@ Opens at `http://localhost:5555`
 ## Troubleshooting
 
 ### Prisma Client Not Found
+
 ```bash
 npx prisma generate
 ```
 
 ### Database Connection Error
+
 - Check DATABASE_URL in `.env`
 - Verify MySQL is running
 - Test connection: `mysql -u root -p`
 
 ### Port Already in Use
+
 Change PORT in `.env` or:
+
 ```bash
 lsof -i :3001
 kill -9 <PID>

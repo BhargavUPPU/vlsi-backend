@@ -1,4 +1,11 @@
-import { IsString, IsNotEmpty, IsOptional, IsInt, IsBoolean } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsInt,
+  IsBoolean,
+} from 'class-validator';
+import { Transform, Type } from 'class-transformer';
 
 export class CreateAnnouncementDto {
   @IsString()
@@ -21,6 +28,12 @@ export class CreateAnnouncementDto {
   @IsNotEmpty()
   venue: string;
 
+  @Transform(({ value }) => {
+    if (value === null || value === undefined || value === '') return undefined;
+    const parsed = parseInt(value, 10);
+    return isNaN(parsed) ? value : parsed;
+  })
+  @Type(() => Number)
   @IsOptional()
   @IsInt()
   priority?: number;

@@ -1,4 +1,3 @@
-
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateEventDto } from './dto/create-event.dto';
@@ -9,19 +8,31 @@ import { Prisma } from '@prisma/client';
 export class EventsService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createEventDto: any, files?: Array<Express.Multer.File>, certificateFile?: Express.Multer.File) {
+  async create(
+    createEventDto: any,
+    files?: Array<Express.Multer.File>,
+    certificateFile?: Express.Multer.File,
+  ) {
     console.log('========== CREATE EVENT DEBUG ==========');
-    console.log('1. Received createEventDto:', JSON.stringify(createEventDto, null, 2));
+    console.log(
+      '1. Received createEventDto:',
+      JSON.stringify(createEventDto, null, 2),
+    );
     console.log('2. Files received:', files?.length, 'files');
     console.log('2a. Certificate file:', certificateFile ? 'YES' : 'NO');
     console.log('3. Raw eventHighlights:', createEventDto.eventHighlights);
-    console.log('4. Raw studentCoordinators:', createEventDto.studentCoordinators);
-    
+    console.log(
+      '4. Raw studentCoordinators:',
+      createEventDto.studentCoordinators,
+    );
+
     // Parse array fields (they come as JSON strings from FormData)
     const arrayFields: any = {};
     if (createEventDto.eventHighlights) {
       try {
-        arrayFields.eventHighlights = JSON.parse(createEventDto.eventHighlights);
+        arrayFields.eventHighlights = JSON.parse(
+          createEventDto.eventHighlights,
+        );
         console.log('5. Parsed eventHighlights:', arrayFields.eventHighlights);
       } catch (e) {
         console.log('5. Failed to parse eventHighlights:', e);
@@ -30,8 +41,13 @@ export class EventsService {
     }
     if (createEventDto.studentCoordinators) {
       try {
-        arrayFields.studentCoordinators = JSON.parse(createEventDto.studentCoordinators);
-        console.log('6. Parsed studentCoordinators:', arrayFields.studentCoordinators);
+        arrayFields.studentCoordinators = JSON.parse(
+          createEventDto.studentCoordinators,
+        );
+        console.log(
+          '6. Parsed studentCoordinators:',
+          arrayFields.studentCoordinators,
+        );
       } catch (e) {
         console.log('6. Failed to parse studentCoordinators:', e);
         arrayFields.studentCoordinators = [];
@@ -39,8 +55,13 @@ export class EventsService {
     }
     if (createEventDto.facultyCoordinators) {
       try {
-        arrayFields.facultyCoordinators = JSON.parse(createEventDto.facultyCoordinators);
-        console.log('7. Parsed facultyCoordinators:', arrayFields.facultyCoordinators);
+        arrayFields.facultyCoordinators = JSON.parse(
+          createEventDto.facultyCoordinators,
+        );
+        console.log(
+          '7. Parsed facultyCoordinators:',
+          arrayFields.facultyCoordinators,
+        );
       } catch (e) {
         console.log('7. Failed to parse facultyCoordinators:', e);
         arrayFields.facultyCoordinators = [];
@@ -48,8 +69,13 @@ export class EventsService {
     }
     if (createEventDto.speakerHighlights) {
       try {
-        arrayFields.speakerHighlights = JSON.parse(createEventDto.speakerHighlights);
-        console.log('8. Parsed speakerHighlights:', arrayFields.speakerHighlights);
+        arrayFields.speakerHighlights = JSON.parse(
+          createEventDto.speakerHighlights,
+        );
+        console.log(
+          '8. Parsed speakerHighlights:',
+          arrayFields.speakerHighlights,
+        );
       } catch (e) {
         console.log('8. Failed to parse speakerHighlights:', e);
         arrayFields.speakerHighlights = [];
@@ -57,9 +83,16 @@ export class EventsService {
     }
 
     // Remove file-related fields and parse numbers
-    const { files: _files, eventCertificateImage, ...eventData } = createEventDto;
-    console.log('9. After filtering files/certificate:', Object.keys(eventData));
-    
+    const {
+      files: _files,
+      eventCertificateImage,
+      ...eventData
+    } = createEventDto;
+    console.log(
+      '9. After filtering files/certificate:',
+      Object.keys(eventData),
+    );
+
     // Parse number fields
     if (eventData.noOfParticipants) {
       eventData.noOfParticipants = parseInt(eventData.noOfParticipants);
@@ -71,7 +104,7 @@ export class EventsService {
     // Use transaction to ensure atomicity
     return await this.prisma.$transaction(async (tx) => {
       console.log('12. Starting transaction...');
-      
+
       const event = await tx.event.create({
         data: {
           ...eventData,
@@ -79,7 +112,7 @@ export class EventsService {
           eventDate: new Date(createEventDto.eventDate),
           // Save certificate image if provided
           ...(certificateFile && {
-            eventCertificateImage: new Uint8Array(certificateFile.buffer)
+            eventCertificateImage: new Uint8Array(certificateFile.buffer),
           }),
         },
       });
@@ -92,26 +125,38 @@ export class EventsService {
         console.log('13. Starting to save', files.length, 'files...');
         try {
           const filePromises = files.map((file, index) => {
-            console.log(`  - File ${index + 1}: size=${file.size}, mimetype=${file.mimetype}`);
+            console.log(
+              `  - File ${index + 1}: size=${file.size}, mimetype=${file.mimetype}`,
+            );
             console.log(`  - Buffer length: ${file.buffer.length}`);
-            
-            return tx.eventFile.create({
-              data: {
-                eventId: event.id,
-                fileData: new Uint8Array(file.buffer),
-              },
-            }).then(savedFile => {
-              console.log(`  - Saved file ${index + 1} with ID: ${savedFile.id}`);
-              return savedFile;
-            }).catch(err => {
-              console.error(`  - ERROR saving file ${index + 1}:`, err);
-              throw err;
-            });
+
+            return tx.eventFile
+              .create({
+                data: {
+                  eventId: event.id,
+                  fileData: new Uint8Array(file.buffer),
+                },
+              })
+              .then((savedFile) => {
+                console.log(
+                  `  - Saved file ${index + 1} with ID: ${savedFile.id}`,
+                );
+                return savedFile;
+              })
+              .catch((err) => {
+                console.error(`  - ERROR saving file ${index + 1}:`, err);
+                throw err;
+              });
           });
-          
+
           const savedFiles = await Promise.all(filePromises);
-          console.log(`14. Successfully saved ${savedFiles.length} files for event ${event.id}`);
-          console.log('14a. Saved file IDs:', savedFiles.map(f => f.id));
+          console.log(
+            `14. Successfully saved ${savedFiles.length} files for event ${event.id}`,
+          );
+          console.log(
+            '14a. Saved file IDs:',
+            savedFiles.map((f) => f.id),
+          );
         } catch (error) {
           console.error('ERROR saving files:', error);
           throw error;
@@ -125,11 +170,11 @@ export class EventsService {
         where: { id: event.id },
         include: { files: true },
       });
-      
+
       console.log('15. Final event with', finalEvent?.files?.length, 'files');
       console.log('16. Transaction will commit now...');
       console.log('========== END CREATE EVENT DEBUG ==========');
-      
+
       return finalEvent;
     });
   }
@@ -157,6 +202,8 @@ export class EventsService {
       include: {
         files: true,
       },
+      // Explicitly select the certificate image
+      // By default, all fields are selected, so this should work
     });
 
     if (!event) {
@@ -166,38 +213,56 @@ export class EventsService {
     return event;
   }
 
-  async update(id: string, updateEventDto: any, files?: Array<Express.Multer.File>, certificateFile?: Express.Multer.File) {
+  async update(
+    id: string,
+    updateEventDto: any,
+    files?: Array<Express.Multer.File>,
+    certificateFile?: Express.Multer.File,
+  ) {
     await this.findOne(id);
     console.log('Updating event', id, 'files:', files?.length);
+    console.log('Certificate file received:', certificateFile ? 'YES' : 'NO');
 
     // Parse array fields
     const arrayFields: any = {};
     if (updateEventDto.eventHighlights) {
       try {
-        arrayFields.eventHighlights = JSON.parse(updateEventDto.eventHighlights);
+        arrayFields.eventHighlights = JSON.parse(
+          updateEventDto.eventHighlights,
+        );
       } catch (e) {
         // Already parsed or invalid
       }
     }
     if (updateEventDto.studentCoordinators) {
       try {
-        arrayFields.studentCoordinators = JSON.parse(updateEventDto.studentCoordinators);
+        arrayFields.studentCoordinators = JSON.parse(
+          updateEventDto.studentCoordinators,
+        );
       } catch (e) {}
     }
     if (updateEventDto.facultyCoordinators) {
       try {
-        arrayFields.facultyCoordinators = JSON.parse(updateEventDto.facultyCoordinators);
+        arrayFields.facultyCoordinators = JSON.parse(
+          updateEventDto.facultyCoordinators,
+        );
       } catch (e) {}
     }
     if (updateEventDto.speakerHighlights) {
       try {
-        arrayFields.speakerHighlights = JSON.parse(updateEventDto.speakerHighlights);
+        arrayFields.speakerHighlights = JSON.parse(
+          updateEventDto.speakerHighlights,
+        );
       } catch (e) {}
     }
 
     // Remove file-related fields
-    const { files: _files, eventCertificateImage, ...eventData } = updateEventDto;
-    
+    const {
+      files: _files,
+      eventCertificateImage,
+      ...eventData
+    } = updateEventDto;
+
     // Parse number fields
     if (eventData.noOfParticipants) {
       eventData.noOfParticipants = parseInt(eventData.noOfParticipants);
@@ -208,6 +273,12 @@ export class EventsService {
       data.eventDate = new Date(updateEventDto.eventDate);
     }
 
+    // Add certificate image if provided
+    if (certificateFile) {
+      data.eventCertificateImage = new Uint8Array(certificateFile.buffer);
+      console.log('Certificate image added to update data');
+    }
+
     await this.prisma.event.update({
       where: { id },
       data: data,
@@ -216,13 +287,13 @@ export class EventsService {
     // Add new files if provided
     if (files && files.length > 0) {
       console.log('Adding new event files...');
-      const filePromises = files.map(file =>
+      const filePromises = files.map((file) =>
         this.prisma.eventFile.create({
           data: {
             eventId: id,
             fileData: new Uint8Array(file.buffer),
           },
-        })
+        }),
       );
       await Promise.all(filePromises);
       console.log(`Added ${files.length} new files for event ${id}`);

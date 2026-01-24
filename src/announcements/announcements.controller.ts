@@ -3,7 +3,7 @@ import {
   Get,
   Post,
   Body,
-  Patch,
+  Put,
   Param,
   Delete,
   UseGuards,
@@ -12,7 +12,7 @@ import { AnnouncementsService } from './announcements.service';
 import { CreateAnnouncementDto } from './dto/announcement.dto';
 import { UpdateAnnouncementDto } from './dto/update-announcement.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import {SuperAdminGuard} from '../auth/guards/superadmin.guard';
+import { SuperAdminGuard } from '../auth/guards/superadmin.guard';
 
 @Controller('announcements')
 export class AnnouncementsController {
@@ -39,7 +39,7 @@ export class AnnouncementsController {
     return this.announcementsService.findOne(id);
   }
 
-  @Patch(':id')
+  @Put(':id')
   @UseGuards(JwtAuthGuard)
   update(
     @Param('id') id: string,
@@ -49,7 +49,7 @@ export class AnnouncementsController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard,SuperAdminGuard)
+  @UseGuards(JwtAuthGuard, SuperAdminGuard)
   remove(@Param('id') id: string) {
     return this.announcementsService.remove(id);
   }

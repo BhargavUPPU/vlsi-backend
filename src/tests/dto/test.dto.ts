@@ -1,4 +1,5 @@
 import { IsString, IsNotEmpty, IsInt, IsDateString } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
 
 export class CreateTestDto {
   @IsString()
@@ -17,9 +18,19 @@ export class CreateTestDto {
   @IsNotEmpty()
   status: string; // completed, ongoing
 
+  @Transform(({ value }) => {
+    const parsed = parseInt(value, 10);
+    return isNaN(parsed) ? value : parsed;
+  })
+  @Type(() => Number)
   @IsInt()
   noOfQuestions: number;
 
+  @Transform(({ value }) => {
+    const parsed = parseInt(value, 10);
+    return isNaN(parsed) ? value : parsed;
+  })
+  @Type(() => Number)
   @IsInt()
   duration: number; // in minutes
 

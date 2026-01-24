@@ -3,7 +3,7 @@ import {
   Get,
   Post,
   Body,
-  Patch,
+  Put,
   Param,
   Delete,
   UseGuards,
@@ -15,7 +15,7 @@ import {
 } from '@nestjs/common';
 import { VlsiMaterialsService } from './vlsi-materials.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import {SuperAdminGuard} from '../auth/guards/superadmin.guard';
+import { SuperAdminGuard } from '../auth/guards/superadmin.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 
@@ -26,17 +26,22 @@ export class VlsiMaterialsController {
   @UseGuards(JwtAuthGuard)
   @Post()
   @UseInterceptors(FileInterceptor('image'))
-  create(
-    @Body() createDto: any,
-    @UploadedFile() image?: Express.Multer.File,
-  ) {
+  create(@Body() createDto: any, @UploadedFile() image?: Express.Multer.File) {
     console.log('Creating VLSI Material with data:', createDto);
     console.log('Image received:', image ? `Yes (${image.size} bytes)` : 'No');
     return this.vlsiMaterialsService.create(createDto, image?.buffer);
   }
 
   @Get()
-  findAll(@Query() query?: { search?: string; category?: string; page?: string; limit?: string }) {
+  findAll(
+    @Query()
+    query?: {
+      search?: string;
+      category?: string;
+      page?: string;
+      limit?: string;
+    },
+  ) {
     return this.vlsiMaterialsService.findAll(query);
   }
 
@@ -46,7 +51,7 @@ export class VlsiMaterialsController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Patch(':id')
+  @Put(':id')
   @UseInterceptors(FileInterceptor('image'))
   update(
     @Param('id') id: string,
@@ -57,7 +62,7 @@ export class VlsiMaterialsController {
     return this.vlsiMaterialsService.update(id, updateDto, image?.buffer);
   }
 
-  @UseGuards(JwtAuthGuard,SuperAdminGuard)
+  @UseGuards(JwtAuthGuard, SuperAdminGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.vlsiMaterialsService.remove(id);

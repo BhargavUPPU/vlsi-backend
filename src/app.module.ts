@@ -60,40 +60,64 @@ export class AppModule implements OnModuleInit {
   constructor(private readonly prisma: PrismaService) {}
 
   async onModuleInit() {
-    const email = 'admin@vlsi.com';
-    const password = 'admin123'; // Change this to a secure password
-    const name = 'Admin User';
-
-    // Check if admin already exists
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email },
+    // Check if super admin exists
+    console.log('[AppModule] Checking for Super Admin...');
+    const superAdmin = await this.prisma.user.findUnique({
+      where: { email: 'superadmin@vlsi.com' }
     });
 
-    if (existingUser) {
-      console.log('Admin user already exists!');
-      console.log(`Email: ${existingUser.email}`);
-      console.log(`Role: ${existingUser.role}`);
-      return;
+    const tempPassword = "Vlsi@123";
+    const hashedPassword = await bcrypt.hash(tempPassword, 12);
+
+    if (!superAdmin) {
+      console.log('[AppModule] Super Admin not found. Creating...');
+      await this.prisma.user.create({
+        data: {
+          email: 'superadmin@vlsi.com',
+          name: 'Super Administrator',
+          password: hashedPassword,
+          role: 'SUPERADMIN',
+          requirePasswordChange: true,
+        },
+      });
+      console.log('✅ SUPER ADMIN CREATED (superadmin@vlsi.com / Vlsi@123)');
+    } else {
+      console.log(`[AppModule] Super Admin exists. Resetting password to ensure it matches Vlsi@123...`);
+      await this.prisma.user.update({
+        where: { email: 'superadmin@vlsi.com' },
+        data: {
+          password: hashedPassword,
+          role: 'SUPERADMIN', // Ensure role is correct too
+        },
+      });
+      console.log('✅ SUPER ADMIN PASSWORD RESET (superadmin@vlsi.com / Vlsi@123)');
+    }
+  }
+
+  /**
+   * Generate a cryptographically secure temporary password
+   */
+  private generateTempPassword(): string {
+    const length = 12;
+    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+    const numbers = '0123456789';
+    const special = '!@#$%^&*';
+    const all = uppercase + lowercase + numbers + special;
+
+    // Ensure at least one of each type
+    let password = '';
+    password += uppercase[Math.floor(Math.random() * uppercase.length)];
+    password += lowercase[Math.floor(Math.random() * lowercase.length)];
+    password += numbers[Math.floor(Math.random() * numbers.length)];
+    password += special[Math.floor(Math.random() * special.length)];
+
+    // Fill the rest randomly
+    for (let i = password.length; i < length; i++) {
+      password += all[Math.floor(Math.random() * all.length)];
     }
 
-    // Create admin user
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const admin = await this.prisma.user.create({
-      data: {
-        email,
-        name,
-        password: hashedPassword,
-        role: 'ADMIN',
-      },
-    });
-
-    console.log('✅ Admin user created successfully!');
-    console.log('=====================================');
-    console.log(`Email: ${email}`);
-    console.log(`Password: ${password}`);
-    console.log(`Role: ${admin.role}`);
-    console.log('=====================================');
-    console.log('⚠️  Please change the password after first login!');
+    // Shuffle the password
+    return password.split('').sort(() => Math.random() - 0.5).join('');
   }
 }

@@ -19,16 +19,31 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, pass: string): Promise<any> {
+    console.log(`[AuthService] Validating user: ${email}`);
     if (!email || !pass) {
+      console.log('[AuthService] Email or password missing');
       return null;
     }
 
-    const user = await this.usersService.findOne(email.toLowerCase().trim());
-    if (user && (await bcrypt.compare(pass, user.password || ''))) {
-      const { password, ...result } = user;
-      return result;
+    const cleanedEmail = email.toLowerCase().trim();
+    const user = await this.usersService.findOne(cleanedEmail);
+    
+    if (!user) {
+      console.log(`[AuthService] User not found: ${cleanedEmail}`);
+      return null;
     }
-    return null;
+
+    console.log(`[AuthService] User found: ${user.email}. Role: ${user.role}`);
+    
+    const isPasswordValid = await bcrypt.compare(pass, user.password || '');
+    if (!isPasswordValid) {
+      console.log(`[AuthService] Password mismatch for: ${cleanedEmail}`);
+      return null;
+    }
+
+    console.log(`[AuthService] Login successful for: ${cleanedEmail}`);
+    const { password, ...result } = user;
+    return result;
   }
 
   async login(user: any) {
@@ -111,7 +126,7 @@ export class AuthService {
     };
 
     const accessTokenExpiry =
-      this.configService.get<string>('JWT_EXPIRES_IN') ?? '15m';
+      this.configService.get<string>('JWT_EXPIRES_IN') ?? '7d';
     const refreshTokenExpiry =
       this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') ?? '7d';
 
@@ -134,7 +149,7 @@ export class AuthService {
     };
 
     const accessTokenExpiry =
-      this.configService.get<string>('JWT_EXPIRES_IN') ?? '15m';
+      this.configService.get<string>('JWT_EXPIRES_IN') ?? '7d';
 
     return {
       access_token: this.jwtService.sign(payload, {
@@ -164,36 +179,60 @@ export class AuthService {
    */
   validatePasswordRequirements(password: string): void {
     if (password.length < 8) {
-      throw new BadRequestException('Password must be at least 8 characters long');
+      throw new BadRequestException(
+        'Password must be at least 8 characters long',
+      );
     }
 
     if (!/[A-Z]/.test(password)) {
-      throw new BadRequestException('Password must contain at least one uppercase letter');
+      throw new BadRequestException(
+        'Password must contain at least one uppercase letter',
+      );
     }
 
     if (!/[a-z]/.test(password)) {
-      throw new BadRequestException('Password must contain at least one lowercase letter');
+      throw new BadRequestException(
+        'Password must contain at least one lowercase letter',
+      );
     }
 
     if (!/[0-9]/.test(password)) {
-      throw new BadRequestException('Password must contain at least one number');
+      throw new BadRequestException(
+        'Password must contain at least one number',
+      );
     }
 
     if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
-      throw new BadRequestException('Password must contain at least one special character');
+      throw new BadRequestException(
+        'Password must contain at least one special character',
+      );
     }
 
     // Check against common passwords
-    const commonPasswords = ['password', 'password123', '12345678', 'qwerty123', 'admin123'];
-    if (commonPasswords.some(common => password.toLowerCase().includes(common))) {
-      throw new BadRequestException('Password is too common. Please choose a stronger password');
+    const commonPasswords = [
+      'password',
+      'password123',
+      '12345678',
+      'qwerty123',
+      'admin123',
+    ];
+    if (
+      commonPasswords.some((common) => password.toLowerCase().includes(common))
+    ) {
+      throw new BadRequestException(
+        'Password is too common. Please choose a stronger password',
+      );
     }
   }
 
   /**
    * Change user password (user changes own password)
    */
-  async changePassword(userId: string, oldPassword: string, newPassword: string): Promise<void> {
+  async changePassword(
+    userId: string,
+    oldPassword: string,
+    newPassword: string,
+  ): Promise<void> {
     // Validate new password requirements
     this.validatePasswordRequirements(newPassword);
 
@@ -204,7 +243,10 @@ export class AuthService {
     }
 
     // Verify old password
-    const isValidOldPassword = await bcrypt.compare(oldPassword, user.password || '');
+    const isValidOldPassword = await bcrypt.compare(
+      oldPassword,
+      user.password || '',
+    );
     if (!isValidOldPassword) {
       throw new UnauthorizedException('Current password is incorrect');
     }
@@ -212,7 +254,9 @@ export class AuthService {
     // Check that new password is different
     const isSameAsOld = await bcrypt.compare(newPassword, user.password || '');
     if (isSameAsOld) {
-      throw new BadRequestException('New password must be different from current password');
+      throw new BadRequestException(
+        'New password must be different from current password',
+      );
     }
 
     // Hash new password
@@ -246,6 +290,9 @@ export class AuthService {
     }
 
     // Shuffle the password
-    return password.split('').sort(() => Math.random() - 0.5).join('');
+    return password
+      .split('')
+      .sort(() => Math.random() - 0.5)
+      .join('');
   }
 }

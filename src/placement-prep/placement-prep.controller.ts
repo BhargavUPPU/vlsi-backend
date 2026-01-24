@@ -3,7 +3,7 @@ import {
   Get,
   Post,
   Body,
-  Patch,
+  Put,
   Param,
   Delete,
   UseGuards,
@@ -15,7 +15,7 @@ import {
 } from '@nestjs/common';
 import { PlacementPrepService } from './placement-prep.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import {SuperAdminGuard} from '../auth/guards/superadmin.guard';
+import { SuperAdminGuard } from '../auth/guards/superadmin.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 
@@ -26,17 +26,22 @@ export class PlacementPrepController {
   @UseGuards(JwtAuthGuard)
   @Post()
   @UseInterceptors(FileInterceptor('image'))
-  create(
-    @Body() createDto: any,
-    @UploadedFile() image?: Express.Multer.File,
-  ) {
+  create(@Body() createDto: any, @UploadedFile() image?: Express.Multer.File) {
     console.log('Creating Placement Prep with data:', createDto);
     console.log('Image received:', image ? `Yes (${image.size} bytes)` : 'No');
     return this.placementPrepService.create(createDto, image?.buffer);
   }
 
   @Get()
-  findAll(@Query() query?: { search?: string; category?: string; page?: string; limit?: string }) {
+  findAll(
+    @Query()
+    query?: {
+      search?: string;
+      category?: string;
+      page?: string;
+      limit?: string;
+    },
+  ) {
     return this.placementPrepService.findAll(query);
   }
 
@@ -46,7 +51,7 @@ export class PlacementPrepController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Patch(':id')
+  @Put(':id')
   @UseInterceptors(FileInterceptor('image'))
   update(
     @Param('id') id: string,
@@ -57,7 +62,7 @@ export class PlacementPrepController {
     return this.placementPrepService.update(id, updateDto, image?.buffer);
   }
 
-  @UseGuards(JwtAuthGuard,SuperAdminGuard)
+  @UseGuards(JwtAuthGuard, SuperAdminGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.placementPrepService.remove(id);

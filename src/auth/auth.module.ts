@@ -20,7 +20,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
           'your-super-secret-jwt-key-change-this-in-production',
         signOptions: {
           expiresIn: (configService.get<string>('JWT_EXPIRES_IN') ||
-            '15m') as any,
+            '7d') as any,
           issuer: configService.get<string>('JWT_ISSUER') || 'vlsi-app',
           audience: configService.get<string>('JWT_AUDIENCE') || 'vlsi-users',
         },

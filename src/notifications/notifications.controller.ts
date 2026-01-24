@@ -1,8 +1,18 @@
 import {
-  Controller, Get, Post, Body, Patch, Param, Delete, UseGuards,
+  Controller,
+  Get,
+  Post,
+  Body,
+  Put,
+  Param,
+  Delete,
+  UseGuards,
 } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
-import { CreateNotificationDto, UpdateNotificationDto } from './dto/notification.dto';
+import {
+  CreateNotificationDto,
+  UpdateNotificationDto,
+} from './dto/notification.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('runningNotifications')
@@ -32,8 +42,11 @@ export class NotificationsController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateNotificationDto: UpdateNotificationDto) {
+  @Put(':id')
+  update(
+    @Param('id') id: string,
+    @Body() updateNotificationDto: UpdateNotificationDto,
+  ) {
     return this.notificationsService.update(id, updateNotificationDto);
   }
 

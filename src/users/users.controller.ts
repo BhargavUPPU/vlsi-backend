@@ -3,7 +3,7 @@ import {
   Get,
   Post,
   Body,
-  Patch,
+  Put,
   Param,
   Delete,
   UseGuards,
@@ -29,7 +29,7 @@ export class UsersController {
   async create(@Request() req, @Body() createUserDto: CreateUserDto) {
     // Generate temporary password
     const tempPassword = this.authService.generateTempPassword();
-    
+
     // Create user with temp password
     const user = await this.usersService.createUser(
       req.user.id,
@@ -41,7 +41,8 @@ export class UsersController {
     return {
       user,
       temporaryPassword: tempPassword,
-      message: 'User created successfully. Share the temporary password securely.',
+      message:
+        'User created successfully. Share the temporary password securely.',
     };
   }
 
@@ -55,7 +56,7 @@ export class UsersController {
     return this.usersService.findById(id);
   }
 
-  @Patch(':id')
+  @Put(':id')
   update(
     @Request() req,
     @Param('id') id: string,
@@ -65,7 +66,7 @@ export class UsersController {
   }
 
   @UseGuards(SuperAdminGuard)
-  @Patch(':id/role')
+  @Put(':id/role')
   updateRole(
     @Request() req,
     @Param('id') id: string,
@@ -78,7 +79,7 @@ export class UsersController {
   async resetPassword(@Request() req, @Param('id') id: string) {
     // Generate new temporary password
     const tempPassword = this.authService.generateTempPassword();
-    
+
     // Reset user password
     await this.usersService.resetPassword(req.user.id, id, tempPassword);
 

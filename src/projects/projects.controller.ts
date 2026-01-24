@@ -3,7 +3,7 @@ import {
   Get,
   Post,
   Body,
-  Patch,
+  Put,
   Param,
   Delete,
   UseGuards,
@@ -20,7 +20,10 @@ import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { SuperAdminGuard } from '../auth/guards/superadmin.guard';
-import { FileInterceptor, FileFieldsInterceptor } from '@nestjs/platform-express';
+import {
+  FileInterceptor,
+  FileFieldsInterceptor,
+} from '@nestjs/platform-express';
 import { Response } from 'express';
 
 @Controller('projects')
@@ -29,9 +32,7 @@ export class ProjectsController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  @UseInterceptors(FileFieldsInterceptor([
-    { name: 'files', maxCount: 15 },
-  ]))
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'files', maxCount: 15 }]))
   create(
     @Body() createProjectDto: any,
     @UploadedFiles() uploadedFiles: { files?: Express.Multer.File[] },
@@ -66,11 +67,8 @@ export class ProjectsController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateProjectDto: UpdateProjectDto,
-  ) {
+  @Put(':id')
+  update(@Param('id') id: string, @Body() updateProjectDto: UpdateProjectDto) {
     return this.projectsService.update(id, updateProjectDto);
   }
 

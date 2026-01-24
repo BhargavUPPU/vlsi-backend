@@ -1,5 +1,12 @@
-import { IsString, IsNotEmpty, IsOptional, IsDateString, IsInt, IsArray } from 'class-validator';
-import { Transform } from 'class-transformer';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsDateString,
+  IsInt,
+  IsArray,
+} from 'class-validator';
+import { Transform, Type } from 'class-transformer';
 
 export class CreateEventDto {
   @IsString()
@@ -31,7 +38,12 @@ export class CreateEventDto {
   eventVideoLink?: string;
 
   @IsOptional()
-  @Transform(({ value }) => value ? parseInt(value, 10) : undefined)
+  @Transform(({ value }) => {
+    if (value === null || value === undefined || value === '') return undefined;
+    const parsed = parseInt(value, 10);
+    return isNaN(parsed) ? value : parsed;
+  })
+  @Type(() => Number)
   @IsInt()
   noOfParticipants?: number;
 

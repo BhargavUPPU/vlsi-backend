@@ -3,7 +3,7 @@ import {
   Get,
   Post,
   Body,
-  Patch,
+  Put,
   Param,
   Delete,
   UseGuards,
@@ -13,7 +13,7 @@ import { ClubMembersService } from './club-members.service';
 import { CreateClubMemberDto } from './dto/create-club-member.dto';
 import { UpdateClubMemberDto } from './dto/update-club-member.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import {SuperAdminGuard} from '../auth/guards/superadmin.guard';
+import { SuperAdminGuard } from '../auth/guards/superadmin.guard';
 
 @Controller('clubMembers')
 export class ClubMembersController {
@@ -46,7 +46,7 @@ export class ClubMembersController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Patch(':id')
+  @Put(':id')
   update(
     @Param('id') id: string,
     @Body() updateClubMemberDto: UpdateClubMemberDto,
@@ -54,7 +54,7 @@ export class ClubMembersController {
     return this.clubMembersService.update(id, updateClubMemberDto);
   }
 
-  @UseGuards(JwtAuthGuard,SuperAdminGuard)
+  @UseGuards(JwtAuthGuard, SuperAdminGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.clubMembersService.remove(id);

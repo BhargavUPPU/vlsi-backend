@@ -1,10 +1,18 @@
 import {
-  Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query,
+  Controller,
+  Get,
+  Post,
+  Body,
+  Put,
+  Param,
+  Delete,
+  UseGuards,
+  Query,
 } from '@nestjs/common';
 import { TestsService } from './tests.service';
 import { CreateTestDto, UpdateTestDto } from './dto/test.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import {SuperAdminGuard} from '../auth/guards/superadmin.guard';
+import { SuperAdminGuard } from '../auth/guards/superadmin.guard';
 
 @Controller('tests')
 export class TestsController {
@@ -17,7 +25,10 @@ export class TestsController {
   }
 
   @Get()
-  findAll(@Query('status') status?: string, @Query('subject') subject?: string) {
+  findAll(
+    @Query('status') status?: string,
+    @Query('subject') subject?: string,
+  ) {
     if (status) return this.testsService.findByStatus(status);
     if (subject) return this.testsService.findBySubject(subject);
     return this.testsService.findAll();
@@ -29,12 +40,12 @@ export class TestsController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Patch(':id')
+  @Put(':id')
   update(@Param('id') id: string, @Body() updateTestDto: UpdateTestDto) {
     return this.testsService.update(id, updateTestDto);
   }
 
-  @UseGuards(JwtAuthGuard,SuperAdminGuard)
+  @UseGuards(JwtAuthGuard, SuperAdminGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.testsService.remove(id);

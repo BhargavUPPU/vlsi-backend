@@ -1,4 +1,4 @@
-import { Controller, Request, Post, UseGuards, Body, Get, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Controller, Request, Post, UseGuards, Body, Get, UnauthorizedException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -22,7 +22,10 @@ export class AuthController {
       return {
         accessToken: result.access_token,
         refreshToken: result.refresh_token,
-        user: result.user,
+        user: {
+          ...result.user,
+          requirePasswordChange: result.user.requirePasswordChange || false,
+        },
       };
     } catch (error) {
       throw new UnauthorizedException('Login failed');
@@ -31,21 +34,8 @@ export class AuthController {
 
   @Post('register')
   async register(@Body() createUserDto: any) {
-    try {
-      const result = await this.authService.register(createUserDto);
-      // Transform snake_case to camelCase for frontend
-      return {
-        accessToken: result.access_token,
-        refreshToken: result.refresh_token,
-        user: result.user,
-      };
-    } catch (error) {
-      // Re-throw known errors, wrap unknown ones
-      if (error.status) {
-        throw error;
-      }
-      throw new BadRequestException('Registration failed');
-    }
+    // Registration disabled - users must be created by administrators
+    throw new ForbiddenException('Public registration is disabled. Please contact an administrator.');
   }
 
   @Post('refresh')

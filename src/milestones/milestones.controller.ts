@@ -3,7 +3,7 @@ import {
   Get,
   Post,
   Body,
-  Patch,
+  Put,
   Param,
   Delete,
   Query,
@@ -45,7 +45,7 @@ export class MilestonesController {
     @Query('isActive') isActive?: string,
   ) {
     const filters: any = {};
-    
+
     if (year) filters.year = year;
     if (category) filters.category = category;
     if (isActive !== undefined) filters.isActive = isActive === 'true';
@@ -72,13 +72,13 @@ export class MilestonesController {
   async getImage(@Param('id') id: string, @Res() res: Response) {
     try {
       const imageBuffer = await this.milestonesService.getImage(id);
-      
+
       res.set({
         'Content-Type': 'image/jpeg',
         'Content-Length': imageBuffer.length,
         'Cache-Control': 'public, max-age=31536000', // Cache for 1 year
       });
-      
+
       res.send(Buffer.from(imageBuffer));
     } catch (error) {
       res.status(HttpStatus.NOT_FOUND).json({
@@ -88,7 +88,7 @@ export class MilestonesController {
     }
   }
 
-  @Patch(':id')
+  @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'SUPERADMIN')
   @UseInterceptors(FileInterceptor('image'))
@@ -100,7 +100,7 @@ export class MilestonesController {
     return this.milestonesService.update(id, updateMilestoneDto, image);
   }
 
-  @Patch(':id/priority')
+  @Put(':id/priority')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'SUPERADMIN')
   updatePriority(
@@ -110,7 +110,7 @@ export class MilestonesController {
     return this.milestonesService.updatePriority(id, priority);
   }
 
-  @Patch(':id/toggle-active')
+  @Put(':id/toggle-active')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'SUPERADMIN')
   toggleActive(@Param('id') id: string) {

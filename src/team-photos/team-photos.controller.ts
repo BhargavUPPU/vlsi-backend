@@ -3,7 +3,7 @@ import {
   Get,
   Post,
   Body,
-  Patch,
+  Put,
   Param,
   Delete,
   UseGuards,
@@ -15,7 +15,7 @@ import { TeamPhotosService } from './team-photos.service';
 import { CreateTeamPhotoDto } from './dto/create-team-photo.dto';
 import { UpdateTeamPhotoDto } from './dto/update-team-photo.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import {SuperAdminGuard} from '../auth/guards/superadmin.guard';
+import { SuperAdminGuard } from '../auth/guards/superadmin.guard';
 
 @Controller('teamPhotos')
 export class TeamPhotosController {
@@ -28,10 +28,11 @@ export class TeamPhotosController {
     @Body() createTeamPhotoDto: CreateTeamPhotoDto,
     @UploadedFiles() files: Express.Multer.File[],
   ) {
-    if (!files || files.length === 0) throw new Error('At least one image file is required');
+    if (!files || files.length === 0)
+      throw new Error('At least one image file is required');
     return this.teamPhotosService.create(
       createTeamPhotoDto.academicYear,
-      files.map(f => f.buffer),
+      files.map((f) => f.buffer),
     );
   }
 
@@ -51,28 +52,29 @@ export class TeamPhotosController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Patch(':id')
+  @Put(':id')
   @UseInterceptors(FilesInterceptor('images', 5))
   update(
     @Param('id') id: string,
     @UploadedFiles() files: Express.Multer.File[],
   ) {
-    if (!files || files.length === 0) throw new Error('At least one image file is required');
+    if (!files || files.length === 0)
+      throw new Error('At least one image file is required');
     return this.teamPhotosService.update(
       id,
-      files.map(f => f.buffer),
+      files.map((f) => f.buffer),
     );
   }
 
-	@UseGuards(JwtAuthGuard,SuperAdminGuard)
-	@Delete(':id')
-	remove(@Param('id') id: string) {
-		return this.teamPhotosService.remove(id);
-	}
+  @UseGuards(JwtAuthGuard, SuperAdminGuard)
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.teamPhotosService.remove(id);
+  }
 
   @Get(':id/images')
   async getImages(@Param('id') id: string) {
     const imagesData = await this.teamPhotosService.getImages(id);
-    return imagesData.map(data => Buffer.from(data));
+    return imagesData.map((data) => Buffer.from(data));
   }
 }

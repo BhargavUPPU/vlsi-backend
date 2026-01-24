@@ -3,7 +3,7 @@ import {
   Get,
   Post,
   Body,
-  Patch,
+  Put,
   Param,
   Delete,
   UseGuards,
@@ -32,9 +32,18 @@ export class PhotoGalleryController {
     if (!files || files.length === 0) {
       throw new Error('At least one image file is required');
     }
+    // Ensure priority is a number when using multipart/form-data
+    const data = {
+      ...createPhotoGalleryDto,
+      priority:
+        createPhotoGalleryDto.priority &&
+        typeof createPhotoGalleryDto.priority === 'string'
+          ? parseInt(createPhotoGalleryDto.priority, 10)
+          : createPhotoGalleryDto.priority,
+    };
     return this.photoGalleryService.create(
-      createPhotoGalleryDto,
-      files.map(f => f.buffer),
+      data,
+      files.map((f) => f.buffer),
     );
   }
 
@@ -49,15 +58,25 @@ export class PhotoGalleryController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Patch(':id')
+  @Put(':id')
   @UseInterceptors(FilesInterceptor('images', 20))
   update(
     @Param('id') id: string,
     @Body() updatePhotoGalleryDto: UpdatePhotoGalleryDto,
     @UploadedFiles() files?: Express.Multer.File[],
   ) {
-    const imageBuffers = files && files.length > 0 ? files.map(f => f.buffer) : undefined;
-    return this.photoGalleryService.update(id, updatePhotoGalleryDto, imageBuffers);
+    // Ensure priority is a number when using multipart/form-data
+    const data = {
+      ...updatePhotoGalleryDto,
+      priority:
+        updatePhotoGalleryDto.priority &&
+        typeof updatePhotoGalleryDto.priority === 'string'
+          ? parseInt(updatePhotoGalleryDto.priority, 10)
+          : updatePhotoGalleryDto.priority,
+    };
+    const imageBuffers =
+      files && files.length > 0 ? files.map((f) => f.buffer) : undefined;
+    return this.photoGalleryService.update(id, data, imageBuffers);
   }
 
   @UseGuards(JwtAuthGuard, SuperAdminGuard)
@@ -67,7 +86,7 @@ export class PhotoGalleryController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Patch(':id/toggle-active')
+  @Put(':id/toggle-active')
   toggleActive(@Param('id') id: string) {
     return this.photoGalleryService.toggleActive(id);
   }
@@ -75,6 +94,6 @@ export class PhotoGalleryController {
   @Get(':id/images')
   async getImages(@Param('id') id: string) {
     const imagesData = await this.photoGalleryService.getImages(id);
-    return imagesData.map(data => Buffer.from(data));
+    return imagesData.map((data) => Buffer.from(data));
   }
 }

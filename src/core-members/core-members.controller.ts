@@ -3,7 +3,6 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
   Delete,
   UseGuards,
@@ -11,6 +10,7 @@ import {
   UploadedFile,
   Res,
   StreamableFile,
+  Put,
 } from '@nestjs/common';
 import { CoreMembersService } from './core-members.service';
 import { CreateCoreMemberDto } from './dto/create-core-member.dto';
@@ -76,7 +76,7 @@ export class CoreMembersController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Patch(':id')
+  @Put(':id')
   @UseInterceptors(FileInterceptor('image'))
   update(
     @Param('id') id: string,

@@ -3,7 +3,7 @@ import {
   Get,
   Post,
   Body,
-  Patch,
+  Put,
   Param,
   Delete,
   UseGuards,
@@ -20,7 +20,11 @@ import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { SuperAdminGuard } from '../auth/guards/superadmin.guard';
-import { FileInterceptor, FilesInterceptor, FileFieldsInterceptor } from '@nestjs/platform-express';
+import {
+  FileInterceptor,
+  FilesInterceptor,
+  FileFieldsInterceptor,
+} from '@nestjs/platform-express';
 import { Response } from 'express';
 
 @Controller('events')
@@ -29,13 +33,19 @@ export class EventsController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  @UseInterceptors(FileFieldsInterceptor([
-    { name: 'files', maxCount: 20 },
-    { name: 'eventCertificateImage', maxCount: 1 },
-  ]))
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'files', maxCount: 20 },
+      { name: 'eventCertificateImage', maxCount: 1 },
+    ]),
+  )
   create(
     @Body() createEventDto: any,
-    @UploadedFiles() uploadedFiles: { files?: Express.Multer.File[], eventCertificateImage?: Express.Multer.File[] },
+    @UploadedFiles()
+    uploadedFiles: {
+      files?: Express.Multer.File[];
+      eventCertificateImage?: Express.Multer.File[];
+    },
   ) {
     console.log('Received event with files:', uploadedFiles);
     const files = uploadedFiles?.files || [];
@@ -67,20 +77,31 @@ export class EventsController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Patch(':id')
-  @UseInterceptors(FileFieldsInterceptor([
-    { name: 'files', maxCount: 20 },
-    { name: 'eventCertificateImage', maxCount: 1 },
-  ]))
+  @Put(':id')
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'files', maxCount: 20 },
+      { name: 'eventCertificateImage', maxCount: 1 },
+    ]),
+  )
   update(
     @Param('id') id: string,
     @Body() updateEventDto: any,
-    @UploadedFiles() uploadedFiles: { files?: Express.Multer.File[], eventCertificateImage?: Express.Multer.File[] },
+    @UploadedFiles()
+    uploadedFiles: {
+      files?: Express.Multer.File[];
+      eventCertificateImage?: Express.Multer.File[];
+    },
   ) {
     console.log('Updating event with files:', uploadedFiles);
     const files = uploadedFiles?.files || [];
     const certificateFile = uploadedFiles?.eventCertificateImage?.[0];
-    return this.eventsService.update(id, updateEventDto, files, certificateFile);
+    return this.eventsService.update(
+      id,
+      updateEventDto,
+      files,
+      certificateFile,
+    );
   }
 
   @UseGuards(JwtAuthGuard, SuperAdminGuard)
