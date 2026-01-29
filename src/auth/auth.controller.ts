@@ -1,9 +1,29 @@
-import { Controller, Request, Post, UseGuards, Body, Get, UnauthorizedException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  Controller,
+  Request,
+  Post,
+  UseGuards,
+  Body,
+  Get,
+  UnauthorizedException,
+  BadRequestException,
+  ConflictException,
+  HttpStatus,
+  HttpCode,
+  ValidationPipe,
+  UsePipes,
+} from '@nestjs/common';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
+import {
+  RegisterDto,
+  LoginDto,
+  ChangePasswordDto,
+  RefreshTokenDto,
+} from './dto';
 
 @Controller('auth')
 export class AuthController {
@@ -15,16 +35,22 @@ export class AuthController {
 
   @UseGuards(LocalAuthGuard)
   @Post('login')
-  async login(@Request() req) {
+  @HttpCode(HttpStatus.OK)
+  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+  async login(@Request() req, @Body() loginDto: LoginDto) {
     try {
       const result = await this.authService.login(req.user);
       // Transform snake_case to camelCase for frontend
       return {
-        accessToken: result.access_token,
-        refreshToken: result.refresh_token,
-        user: {
-          ...result.user,
-          requirePasswordChange: result.user.requirePasswordChange || false,
+        status: 'success',
+        message: 'Login successful',
+        data: {
+          accessToken: result.access_token,
+          refreshToken: result.refresh_token,
+          user: {
+            ...result.user,
+            requirePasswordChange: result.user.requirePasswordChange || false,
+          },
         },
       };
     } catch (error) {
@@ -33,34 +59,59 @@ export class AuthController {
   }
 
   @Post('register')
-  async register(@Body() createUserDto: any) {
-    // Registration disabled - users must be created by administrators
-    throw new ForbiddenException('Public registration is disabled. Please contact an administrator.');
+  @HttpCode(HttpStatus.CREATED)
+  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+  async register(@Body() registerDto: RegisterDto) {
+    try {
+      const result = await this.authService.register(registerDto);
+
+      return {
+        status: 'success',
+        message: 'Registration successful',
+        data: {
+          accessToken: result.access_token,
+          refreshToken: result.refresh_token,
+          user: result.user,
+        },
+      };
+    } catch (error) {
+      if (error instanceof ConflictException) {
+        throw error;
+      }
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Registration failed. Please try again.');
+    }
   }
 
   @Post('refresh')
-  async refresh(@Body() body: { refreshToken: string }) {
+  @HttpCode(HttpStatus.OK)
+  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+  async refresh(@Body() refreshTokenDto: RefreshTokenDto) {
     try {
-      if (!body.refreshToken) {
-        throw new UnauthorizedException('Refresh token is required');
-      }
-
       // Validate the refresh token using the service
-      const payload = await this.authService.validateRefreshToken(body.refreshToken);
-      
+      const payload = await this.authService.validateRefreshToken(
+        refreshTokenDto.refreshToken,
+      );
+
       // Get fresh user data
       const user = await this.usersService.findOne(payload.email);
-      
+
       if (!user) {
         throw new UnauthorizedException('User not found');
       }
 
       // Generate new access token
       const result = await this.authService.refreshToken(user);
-      
+
       return {
-        accessToken: result.access_token,
-        user: result.user,
+        status: 'success',
+        message: 'Token refreshed successfully',
+        data: {
+          accessToken: result.access_token,
+          user: result.user,
+        },
       };
     } catch (error) {
       if (error.status) {
@@ -71,26 +122,37 @@ export class AuthController {
   }
 
   @Post('logout')
+  @HttpCode(HttpStatus.OK)
   async logout(@Body() body?: { refreshToken?: string }) {
     // In a production app, you might want to blacklist the token
     // For now, we'll just return success since client will remove tokens
     // TODO: Implement token blacklisting for enhanced security
-    return { message: 'Logged out successfully' };
+    return {
+      status: 'success',
+      message: 'Logged out successfully',
+    };
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('profile')
+  @HttpCode(HttpStatus.OK)
   async getProfile(@Request() req) {
     try {
       // Get fresh user data from database
       const user = await this.usersService.findOne(req.user.email);
-      
+
       if (!user) {
         throw new UnauthorizedException('User not found');
       }
-      
+
       const { password, ...userWithoutPassword } = user;
-      return userWithoutPassword;
+      return {
+        status: 'success',
+        message: 'Profile retrieved successfully',
+        data: {
+          user: userWithoutPassword,
+        },
+      };
     } catch (error) {
       if (error.status) {
         throw error;
@@ -101,15 +163,23 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Post('change-password')
-  async changePassword(@Request() req, @Body() body: { oldPassword: string; newPassword: string }) {
+  @HttpCode(HttpStatus.OK)
+  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+  async changePassword(
+    @Request() req,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ) {
     try {
-      if (!body.oldPassword || !body.newPassword) {
-        throw new BadRequestException('Old password and new password are required');
-      }
+      await this.authService.changePassword(
+        req.user.id,
+        changePasswordDto.oldPassword,
+        changePasswordDto.newPassword,
+      );
 
-      await this.authService.changePassword(req.user.id, body.oldPassword, body.newPassword);
-      
-      return { message: 'Password changed successfully' };
+      return {
+        status: 'success',
+        message: 'Password changed successfully',
+      };
     } catch (error) {
       if (error.status) {
         throw error;
