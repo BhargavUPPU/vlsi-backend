@@ -63,18 +63,29 @@ export class AuthController {
   @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
   async register(@Body() registerDto: RegisterDto) {
     try {
+      console.log('[AuthController] Registration attempt:', {
+        ...registerDto,
+        password: '[HIDDEN]'
+      });
+      
       const result = await this.authService.register(registerDto);
 
+      console.log('[AuthController] Registration successful for:', registerDto.email);
+      
       return {
         status: 'success',
         message: 'Registration successful',
-        data: {
-          accessToken: result.access_token,
-          refreshToken: result.refresh_token,
-          user: result.user,
-        },
+        accessToken: result.access_token,
+        refreshToken: result.refresh_token,
+        user: result.user,
       };
     } catch (error) {
+      console.error('[AuthController] Registration failed:', {
+        email: registerDto.email,
+        error: error.message,
+        stack: error.stack
+      });
+      
       if (error instanceof ConflictException) {
         throw error;
       }

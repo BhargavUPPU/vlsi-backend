@@ -107,6 +107,7 @@ export class AuthService {
       email: normalizedEmail,
       name: data.name.trim(),
       password: hashedPassword,
+      requirePasswordChange: true,
     });
 
     const { password, ...result } = user;

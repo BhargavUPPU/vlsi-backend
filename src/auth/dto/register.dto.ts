@@ -5,7 +5,9 @@ import {
   IsString,
   MinLength,
   Matches,
+  IsEnum,
 } from 'class-validator';
+import { UserRole } from '@prisma/client';
 
 export class RegisterDto {
   @IsNotEmpty({ message: 'Name is required' })
@@ -19,10 +21,10 @@ export class RegisterDto {
   @IsNotEmpty({ message: 'Password is required' })
   @MinLength(8, { message: 'Password must be at least 8 characters long' })
   @Matches(
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]+$/,
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
     {
       message:
-        'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
+        'Password must contain at least one uppercase letter, one lowercase letter, and one number',
     },
   )
   password: string;
@@ -30,4 +32,8 @@ export class RegisterDto {
   @IsOptional()
   @IsString({ message: 'Year must be a string' })
   year?: string;
+
+  @IsOptional()
+  @IsEnum(UserRole, { message: 'Role must be either USER or ADMIN' })
+  role?: UserRole;
 }

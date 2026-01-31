@@ -37,8 +37,8 @@ model account {
 }
 
 model achievement {
-  id               String             @id
-  type             achievement_type
+  id               String             @id @default(cuid())
+  type             AchievementType
   title            String?            @db.Text
   description      String?            @db.Text
   value            String?
@@ -46,12 +46,12 @@ model achievement {
   priority         Int                @default(0)
   isActive         Boolean            @default(true)
   createdAt        DateTime           @default(now())
-  updatedAt        DateTime
-  achievementimage achievementimage[]
+  updatedAt        DateTime           @updatedAt
+  images           achievementImage[]
 }
 
-model achievementimage {
-  id            String      @id
+model achievementImage {
+  id            String      @id @default(cuid())
   achievementId String
   imageData     Bytes
   createdAt     DateTime    @default(now())
@@ -61,7 +61,7 @@ model achievementimage {
 }
 
 model announcement {
-  id          String   @id
+  id          String   @id @default(cuid())
   title       String
   description String   @db.Text
   date        String
@@ -70,22 +70,22 @@ model announcement {
   priority    Int      @default(0)
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
-  updatedAt   DateTime
+  updatedAt   DateTime @updatedAt
 }
 
-model clubmembers {
-  id            String   @id
+model clubMembers {
+  id            String   @id @default(cuid())
   name          String
   academicYear  String
   sectionBranch String
   rollNumber    String
   memberShipId  String?
   createdAt     DateTime @default(now())
-  updatedAt     DateTime
+  updatedAt     DateTime @updatedAt
 }
 
-model coremembers {
-  id            String   @id
+model coreMembers {
+  id            String   @id @default(cuid())
   name          String
   academicYear  String
   sectionBranch String
@@ -95,13 +95,13 @@ model coremembers {
   teamCategory  String?
   memberShipId  String?
   createdAt     DateTime @default(now())
-  updatedAt     DateTime
+  updatedAt     DateTime @updatedAt
   description   String?  @db.Text
   image         Bytes?
 }
 
 model event {
-  id                    String      @id
+  id                    String      @id @default(cuid())
   title                 String
   description           String      @db.Text
   eventType             String?
@@ -119,11 +119,11 @@ model event {
   speakerDescription    String?     @db.Text
   speakerHighlights     Json
   eventCertificateImage Bytes?
-  eventfile             eventfile[]
+  files                 eventFile[]
 }
 
-model eventfile {
-  id       String @id
+model eventFile {
+  id       String @id @default(cuid())
   eventId  String
   fileData Bytes
   event    event  @relation(fields: [eventId], references: [id], onDelete: Cascade, map: "EventFile_eventId_fkey")
@@ -131,19 +131,19 @@ model eventfile {
   @@index([eventId], map: "EventFile_eventId_fkey")
 }
 
-model gatepyqs {
-  id        String   @id
+model gatePyqs {
+  id        String   @id @default(cuid())
   year      Int
   link      String
   name      String
   createdAt DateTime @default(now())
-  updatedAt DateTime
+  updatedAt DateTime @updatedAt
   category  String?  @default("General")
   image     Bytes?
 }
 
 model milestone {
-  id          String   @id
+  id          String   @id @default(cuid())
   title       String
   description String   @db.Text
   date        DateTime
@@ -155,67 +155,67 @@ model milestone {
   priority    Int      @default(0)
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
-  updatedAt   DateTime
+  updatedAt   DateTime @updatedAt
 }
 
 model notification {
-  id        String   @id
+  id        String   @id @default(cuid())
   title     String
   message   String   @db.Text
   link      String?
   isActive  Boolean  @default(true)
   priority  Int      @default(0)
   createdAt DateTime @default(now())
-  updatedAt DateTime
+  updatedAt DateTime @updatedAt
 }
 
-model nptellecture {
-  id            String   @id
+model nptelLecture {
+  id            String   @id @default(cuid())
   courseName    String
   professorName String
   image         Bytes?
   link          String
   createdAt     DateTime @default(now())
-  updatedAt     DateTime
+  updatedAt     DateTime @updatedAt
   category      String?  @default("General")
 }
 
-model photogallery {
-  id                String                @id
+model photoGallery {
+  id                String                @id @default(cuid())
   title             String
   description       String?               @db.Text
   category          photogallery_category
   priority          Int                   @default(0)
   isActive          Boolean               @default(true)
   createdAt         DateTime              @default(now())
-  updatedAt         DateTime
-  photogalleryimage photogalleryimage[]
+  updatedAt         DateTime              @updatedAt
+  images            photoGalleryImage[]
 }
 
-model photogalleryimage {
-  id             String       @id
+model photoGalleryImage {
+  id             String       @id @default(cuid())
   photoGalleryId String
   imageData      Bytes
   caption        String?
   displayOrder   Int          @default(0)
   createdAt      DateTime     @default(now())
-  photogallery   photogallery @relation(fields: [photoGalleryId], references: [id], onDelete: Cascade, map: "PhotoGalleryImage_photoGalleryId_fkey")
+  photoGallery   photoGallery @relation(fields: [photoGalleryId], references: [id], onDelete: Cascade, map: "PhotoGalleryImage_photoGalleryId_fkey")
 
   @@index([photoGalleryId], map: "PhotoGalleryImage_photoGalleryId_fkey")
 }
 
-model placementprep {
-  id        String   @id
+model placementPrep {
+  id        String   @id @default(cuid())
   name      String
   image     Bytes?
   link      String
   createdAt DateTime @default(now())
-  updatedAt DateTime
+  updatedAt DateTime @updatedAt
   category  String?  @default("General")
 }
 
-model projectimages {
-  id        String   @id
+model projectImages {
+  id        String   @id @default(cuid())
   projectId String
   fileData  Bytes
   projects  projects @relation(fields: [projectId], references: [id], onDelete: Cascade, map: "ProjectImages_projectId_fkey")
@@ -224,7 +224,7 @@ model projectimages {
 }
 
 model projects {
-  id             String          @id
+  id             String          @id @default(cuid())
   title          String
   status         String
   Introduction   String          @db.Text
@@ -245,27 +245,27 @@ model projects {
   endDate        String?
   Methodology    String?         @db.Text
   createdAt      DateTime        @default(now())
-  updatedAt      DateTime
-  projectimages  projectimages[]
+  updatedAt      DateTime        @updatedAt
+  images         projectImages[]
 }
 
-model questionbank {
-  id        String   @id
+model questionBank {
+  id        String   @id @default(cuid())
   topicName String
   subject   String
   link      String
   createdAt DateTime @default(now())
-  updatedAt DateTime
+  updatedAt DateTime @updatedAt
   category  String?  @default("General")
   image     Bytes?
 }
 
-model runningnotifications {
-  id        String   @id
+model runningNotifications {
+  id        String   @id @default(cuid())
   message   String   @db.Text
   link      String?
   createdAt DateTime @default(now())
-  updatedAt DateTime
+  updatedAt DateTime @updatedAt
 }
 
 model session {
@@ -278,26 +278,26 @@ model session {
   @@index([userId], map: "Session_userId_fkey")
 }
 
-model teamphoto {
-  id             String           @id
+model teamPhoto {
+  id             String           @id @default(cuid())
   academicYear   String           @unique(map: "TeamPhoto_academicYear_key")
   createdAt      DateTime         @default(now())
-  updatedAt      DateTime
-  teamphotoimage teamphotoimage[]
+  updatedAt      DateTime         @updatedAt
+  images         teamPhotoImage[]
 }
 
-model teamphotoimage {
-  id          String    @id
+model teamPhotoImage {
+  id          String    @id @default(cuid())
   teamPhotoId String
   imageData   Bytes
   createdAt   DateTime  @default(now())
-  teamphoto   teamphoto @relation(fields: [teamPhotoId], references: [id], onDelete: Cascade, map: "TeamPhotoImage_teamPhotoId_fkey")
+  teamPhoto   teamPhoto @relation(fields: [teamPhotoId], references: [id], onDelete: Cascade, map: "TeamPhotoImage_teamPhotoId_fkey")
 
   @@index([teamPhotoId], map: "TeamPhotoImage_teamPhotoId_fkey")
 }
 
 model test {
-  id            String   @id
+  id            String   @id @default(cuid())
   title         String
   subject       String
   type          String
@@ -308,11 +308,11 @@ model test {
   date          DateTime
   description   String?  @db.Text
   createdAt     DateTime @default(now())
-  updatedAt     DateTime
+  updatedAt     DateTime @updatedAt
 }
 
-model textbook {
-  id          String   @id
+model textBook {
+  id          String   @id @default(cuid())
   name        String
   description String   @db.Text
   subject     String
@@ -320,22 +320,22 @@ model textbook {
   link        String
   image       Bytes?
   createdAt   DateTime @default(now())
-  updatedAt   DateTime
+  updatedAt   DateTime @updatedAt
   category    String?  @default("General")
 }
 
 model user {
-  id                    String    @id
+  id                    String    @id @default(cuid())
   email                 String?   @unique(map: "User_email_key")
   name                  String?
   password              String?
   year                  String?
-  role                  user_role @default(USER)
+  role                  UserRole @default(USER)
   createdAt             DateTime  @default(now())
   createdBy             String?
   lastPasswordChange    DateTime?
   requirePasswordChange Boolean   @default(false)
-  updatedAt             DateTime
+  updatedAt             DateTime  @updatedAt
   account               account[]
   session               session[]
 }
@@ -348,17 +348,17 @@ model verificationtoken {
   @@unique([identifier, token], map: "VerificationToken_identifier_token_key")
 }
 
-model vlsimaterial {
-  id        String   @id
+model vlsiMaterial {
+  id        String   @id @default(cuid())
   name      String
   category  String
   link      String
   image     Bytes?
   createdAt DateTime @default(now())
-  updatedAt DateTime
+  updatedAt DateTime @updatedAt
 }
 
-enum achievement_type {
+enum AchievementType {
   HERO_CAROUSEL
   CLUB_MILESTONE
   SUMMARY_STAT
@@ -373,7 +373,7 @@ enum photogallery_category {
   BOTH
 }
 
-enum user_role {
+enum UserRole {
   ADMIN
   USER
   SUPERADMIN
