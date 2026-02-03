@@ -87,15 +87,19 @@ export class AchievementsService {
       where: { id },
       select: { mainImage: true }
     });
-    if (!achievement || !achievement.mainImage) throw new NotFoundException();
-    return achievement.mainImage;
+    if (!achievement || !achievement.mainImage) {
+      throw new NotFoundException(`Main image for achievement ${id} not found`);
+    }
+    return Buffer.from(achievement.mainImage);
   }
 
   async getAdditionalImage(imageId: string) {
     const image = await this.prisma.achievementImage.findUnique({
       where: { id: imageId }
     });
-    if (!image) throw new NotFoundException();
-    return image.imageData;
+    if (!image || !image.imageData) {
+      throw new NotFoundException(`Image with ID ${imageId} not found`);
+    }
+    return Buffer.from(image.imageData);
   }
 }

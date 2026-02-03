@@ -139,12 +139,17 @@ export class AchievementsController {
     @Param('id') id: string,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const buffer = await this.achievementsService.getMainImage(id);
-    res.set({
-      'Content-Type': 'image/jpeg',
-      'Content-Disposition': 'inline',
-    });
-    return new StreamableFile(buffer);
+    try {
+      const buffer = await this.achievementsService.getMainImage(id);
+      res.set({
+        'Content-Type': 'image/jpeg',
+        'Content-Disposition': 'inline',
+        'Cache-Control': 'public, max-age=3600',
+      });
+      return new StreamableFile(buffer);
+    } catch (error) {
+      res.status(404).send('Image not found');
+    }
   }
 
   @Get('image/:imageId')
@@ -152,11 +157,16 @@ export class AchievementsController {
     @Param('imageId') imageId: string,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const buffer = await this.achievementsService.getAdditionalImage(imageId);
-    res.set({
-      'Content-Type': 'image/jpeg',
-      'Content-Disposition': 'inline',
-    });
-    return new StreamableFile(buffer);
+    try {
+      const buffer = await this.achievementsService.getAdditionalImage(imageId);
+      res.set({
+        'Content-Type': 'image/jpeg',
+        'Content-Disposition': 'inline',
+        'Cache-Control': 'public, max-age=3600',
+      });
+      return new StreamableFile(buffer);
+    } catch (error) {
+      res.status(404).send('Image not found');
+    }
   }
 }
