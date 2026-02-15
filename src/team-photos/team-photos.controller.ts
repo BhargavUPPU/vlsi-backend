@@ -56,14 +56,11 @@ export class TeamPhotosController {
   @UseInterceptors(FilesInterceptor('images', 5))
   update(
     @Param('id') id: string,
-    @UploadedFiles() files: Express.Multer.File[],
+    @Body() updateTeamPhotoDto: UpdateTeamPhotoDto,
+    @UploadedFiles() files?: Express.Multer.File[],
   ) {
-    if (!files || files.length === 0)
-      throw new Error('At least one image file is required');
-    return this.teamPhotosService.update(
-      id,
-      files.map((f) => f.buffer),
-    );
+    const buffers: Buffer[] = files && files.length ? files.map((f) => f.buffer) : [];
+    return this.teamPhotosService.update(id, updateTeamPhotoDto, buffers);
   }
 
   @UseGuards(JwtAuthGuard, SuperAdminGuard)

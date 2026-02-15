@@ -256,12 +256,28 @@ export class EventsService {
       } catch (e) {}
     }
 
-    // Remove file-related fields
+    // Remove file-related fields and capture existingFileIds if provided
     const {
       files: _files,
       eventCertificateImage,
+      existingFileIds,
       ...eventData
     } = updateEventDto;
+
+    // parse existingFileIds (may come as JSON string or array)
+    let keepFileIds: string[] = [];
+    if (existingFileIds) {
+      if (typeof existingFileIds === 'string') {
+        try {
+          keepFileIds = JSON.parse(existingFileIds);
+        } catch (e) {
+          // ignore parse errors, assume comma-separated
+          keepFileIds = existingFileIds.split(',').map(s => s.trim());
+        }
+      } else if (Array.isArray(existingFileIds)) {
+        keepFileIds = existingFileIds as string[];
+      }
+    }
 
     // Parse number fields
     if (eventData.noOfParticipants) {
@@ -283,6 +299,17 @@ export class EventsService {
       where: { id },
       data: data,
     });
+
+    // delete any files that the client did not include in existingFileIds
+    if (keepFileIds && keepFileIds.length > 0) {
+      console.log('Pruning removed files, keeping IDs:', keepFileIds);
+      await this.prisma.eventFile.deleteMany({
+        where: {
+          eventId: id,
+          id: { notIn: keepFileIds },
+        },
+      });
+    }
 
     // Add new files if provided
     if (files && files.length > 0) {

@@ -34,10 +34,22 @@ export class EventsController {
   @UseGuards(JwtAuthGuard)
   @Post()
   @UseInterceptors(
-    FileFieldsInterceptor([
-      { name: 'files', maxCount: 20 },
-      { name: 'eventCertificateImage', maxCount: 1 },
-    ]),
+    FileFieldsInterceptor(
+      [
+        { name: 'files', maxCount: 20 },
+        { name: 'eventCertificateImage', maxCount: 1 },
+      ],
+      {
+        // allow large text fields in the multipart form, sometimes clients
+        // accidentally send base64/JSON under a field named "files"; the
+        // default 1MB limit causes a LIMIT_FIELD_VALUE error.  bumping the
+        // limit here prevents the 400 seen on update operations.
+        limits: {
+          fieldSize: 50 * 1024 * 1024, // 50MB
+          fileSize: 100 * 1024 * 1024, // 100MB per file
+        },
+      },
+    ),
   )
   create(
     @Body() createEventDto: any,
@@ -79,10 +91,26 @@ export class EventsController {
   @UseGuards(JwtAuthGuard)
   @Put(':id')
   @UseInterceptors(
-    FileFieldsInterceptor([
-      { name: 'files', maxCount: 20 },
-      { name: 'eventCertificateImage', maxCount: 1 },
-    ]),
+    FileFieldsInterceptor(
+      [
+        { name: 'files', maxCount: 20 },
+        { name: 'eventCertificateImage', maxCount: 1 },
+      ],
+      {
+        limits: {
+          fieldSize: 50 * 1024 * 1024,
+          fileSize: 100 * 1024 * 1024,
+        },
+        fileFilter: (req, file, cb) => {
+          // only accept actual files; if client sends a text field named
+          // 'files' (e.g. base64 string) multer will treat it as a field not
+          // a file, but we can't intercept that here.  fileFilter just ensures
+          // we only process valid mimetypes for safety.
+          if (!file.mimetype) return cb(null, false);
+          cb(null, true);
+        },
+      },
+    ),
   )
   update(
     @Param('id') id: string,

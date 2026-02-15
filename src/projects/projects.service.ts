@@ -145,13 +145,101 @@ export class ProjectsService {
     return project;
   }
 
-  async update(id: string, updateProjectDto: UpdateProjectDto) {
-    // Check if project exists
+  async update(id: string, updateProjectDto: any, files?: Array<Express.Multer.File>) {
+    // Add debug info
+    console.log('========== UPDATE PROJECT DEBUG ==========', id);
+    console.log('1. Raw updateProjectDto:', JSON.stringify(updateProjectDto, null, 2));
+    console.log('2. Files passed to update():', files?.length || 0);
+
+    // Parse array fields (same as create)
+    const arrayFields: any = {};
+    if (updateProjectDto.Members) {
+      try {
+        arrayFields.Members = JSON.parse(updateProjectDto.Members);
+        console.log('3. Parsed Members:', arrayFields.Members);
+      } catch (e) {
+        console.log('3. Failed to parse Members:', e);
+        // If it's already an array, keep it
+        if (Array.isArray(updateProjectDto.Members)) {
+          arrayFields.Members = updateProjectDto.Members;
+        }
+      }
+    }
+    if (updateProjectDto.Tools) {
+      try {
+        arrayFields.Tools = JSON.parse(updateProjectDto.Tools);
+        console.log('4. Parsed Tools:', arrayFields.Tools);
+      } catch (e) {
+        console.log('4. Failed to parse Tools:', e);
+        if (Array.isArray(updateProjectDto.Tools)) {
+          arrayFields.Tools = updateProjectDto.Tools;
+        }
+      }
+    }
+    if (updateProjectDto.referenceLinks) {
+      try {
+        arrayFields.referenceLinks = JSON.parse(updateProjectDto.referenceLinks);
+        console.log('5. Parsed referenceLinks:', arrayFields.referenceLinks);
+      } catch (e) {
+        console.log('5. Failed to parse referenceLinks:', e);
+        if (Array.isArray(updateProjectDto.referenceLinks)) {
+          arrayFields.referenceLinks = updateProjectDto.referenceLinks;
+        }
+      }
+    }
+
+    // Remove file-related and relational fields if any (for consistency with create)
+    const {
+      files: _files,
+      images: _images,
+      include: _include,
+      ...projectData
+    } = updateProjectDto;
+    const removedFields: string[] = [];
+    if (_images !== undefined) removedFields.push('images');
+    if (_include !== undefined) removedFields.push('include');
+    console.log('6. After filtering files and relations:', Object.keys(projectData),
+      removedFields.length ? `(removed: ${removedFields.join(', ')})` : '');
+
+    const dataToUpdate = { ...projectData, ...arrayFields };
+    console.log('7. Final data to update:', JSON.stringify(dataToUpdate, null, 2));
+
+    // Ensure project exists before attempting update
     await this.findOne(id);
+
+    // If new files are provided, store them within a transaction along with the update
+    if (files && files.length > 0) {
+      console.log('8. Saving', files.length, 'new files with update...');
+      return this.prisma.$transaction(async (tx) => {
+        const updated = await tx.projects.update({
+          where: { id },
+          data: dataToUpdate,
+          include: { images: true },
+        });
+
+        const filePromises = files.map((file, index) => {
+          console.log(`  - Storing file ${index + 1}: size=${file.size}, mimetype=${file.mimetype}`);
+          return tx.projectImages.create({
+            data: {
+              projectId: id,
+              fileData: new Uint8Array(file.buffer),
+            },
+          });
+        });
+        const savedFiles = await Promise.all(filePromises);
+        console.log('9. Saved new file IDs:', savedFiles.map(f => f.id));
+
+        // return updated project with fresh images list
+        return tx.projects.findUnique({
+          where: { id },
+          include: { images: true },
+        });
+      });
+    }
 
     return this.prisma.projects.update({
       where: { id },
-      data: updateProjectDto,
+      data: dataToUpdate,
       include: {
         images: true,
       },

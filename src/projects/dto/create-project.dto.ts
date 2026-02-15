@@ -1,9 +1,17 @@
-import { IsString, IsNotEmpty, IsOptional, IsArray, IsDateString } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsArray, IsDateString,IsEmpty } from 'class-validator';
 
 export class CreateProjectDto {
   @IsString()
   @IsNotEmpty()
   title: string;
+
+  // the `images` field is handled by separate endpoints; any attempt to send it
+  // with the basic DTO is almost always a mistake.  Block it explicitly so that
+  // clients get a validation error instead of a mysterious Prisma/database
+  // error later.
+  @IsOptional()
+  @IsEmpty({ message: 'images must not be provided; use /projects/:id/images' })
+  images?: any;
 
   @IsString()
   @IsNotEmpty()

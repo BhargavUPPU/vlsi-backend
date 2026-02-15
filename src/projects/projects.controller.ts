@@ -68,8 +68,30 @@ export class ProjectsController {
 
   @UseGuards(JwtAuthGuard)
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateProjectDto: UpdateProjectDto) {
-    return this.projectsService.update(id, updateProjectDto);
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'files', maxCount: 15 }]))
+  update(
+    @Param('id') id: string,
+    @Body() updateProjectDto: UpdateProjectDto,
+    @UploadedFiles() uploadedFiles: { files?: Express.Multer.File[] },
+  ) {
+    console.log('update() called for project', id, 'with payload', updateProjectDto);
+
+    // make a shallow copy so we can safely delete unwanted props
+    const body: any = { ...updateProjectDto };
+    if ('images' in body) {
+      console.warn('client attempted to send `images` in update payload, stripping it');
+      delete body.images;
+    }
+    if ('include' in body) {
+      console.warn('client attempted to send `include` in update payload, stripping it');
+      delete body.include;
+    }
+
+    const files = uploadedFiles?.files || [];
+    if (files.length) {
+      console.log('  received', files.length, 'files during update');
+    }
+    return this.projectsService.update(id, body, files);
   }
 
   @UseGuards(JwtAuthGuard, SuperAdminGuard)
