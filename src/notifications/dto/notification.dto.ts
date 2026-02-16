@@ -1,4 +1,5 @@
 import { IsString, IsNotEmpty, IsBoolean, IsInt, IsOptional } from 'class-validator';
+import { PartialType } from '@nestjs/mapped-types';
 
 export class CreateNotificationDto {
 
@@ -12,7 +13,4 @@ export class CreateNotificationDto {
   link?: string;
 }
 
-export class UpdateNotificationDto {
-  message?: string;
-  link?: string;
-}
+export class UpdateNotificationDto extends PartialType(CreateNotificationDto) {}

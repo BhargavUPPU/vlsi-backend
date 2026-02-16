@@ -24,18 +24,18 @@ export class NotificationsService {
   }
 
   async findOne(id: string) {
-    const notification = await this.prisma.notification.findUnique({ where: { id } });
+    const notification = await this.prisma.runningNotifications.findUnique({ where: { id } });
     if (!notification) throw new NotFoundException(`Notification with ID ${id} not found`);
     return notification;
   }
 
   async update(id: string, updateNotificationDto: UpdateNotificationDto) {
     await this.findOne(id);
-    return this.prisma.notification.update({ where: { id }, data: updateNotificationDto });
+    return this.prisma.runningNotifications.update({ where: { id }, data: updateNotificationDto });
   }
 
   async remove(id: string) {
     await this.findOne(id);
-    return this.prisma.notification.delete({ where: { id } });
+    return this.prisma.runningNotifications.delete({ where: { id } });
   }
 }

@@ -193,6 +193,7 @@ export class ProjectsService {
       files: _files,
       images: _images,
       include: _include,
+      existingFileIds: _existingFileIds,
       ...projectData
     } = updateProjectDto;
     const removedFields: string[] = [];
@@ -202,6 +203,16 @@ export class ProjectsService {
       removedFields.length ? `(removed: ${removedFields.join(', ')})` : '');
 
     const dataToUpdate = { ...projectData, ...arrayFields };
+
+    // Parse existingFileIds if provided (client sends JSON string or array)
+    let existingFileIds: string[] | undefined;
+    if (_existingFileIds !== undefined) {
+      try {
+        existingFileIds = typeof _existingFileIds === 'string' ? JSON.parse(_existingFileIds) : _existingFileIds;
+      } catch (e) {
+        if (Array.isArray(_existingFileIds)) existingFileIds = _existingFileIds;
+      }
+    }
     console.log('7. Final data to update:', JSON.stringify(dataToUpdate, null, 2));
 
     // Ensure project exists before attempting update
@@ -229,11 +240,41 @@ export class ProjectsService {
         const savedFiles = await Promise.all(filePromises);
         console.log('9. Saved new file IDs:', savedFiles.map(f => f.id));
 
+        // If client provided existingFileIds, remove any images not in that list
+        if (existingFileIds !== undefined) {
+          console.log('10. Removing images not in existingFileIds:', existingFileIds);
+          await tx.projectImages.deleteMany({
+            where: {
+              projectId: id,
+              id: { notIn: existingFileIds },
+            },
+          });
+        }
+
         // return updated project with fresh images list
         return tx.projects.findUnique({
           where: { id },
           include: { images: true },
         });
+      });
+    }
+
+    // If existingFileIds provided, perform update and deletion atomically in a transaction
+    if (existingFileIds !== undefined) {
+      return this.prisma.$transaction(async (tx) => {
+        await tx.projects.update({
+          where: { id },
+          data: dataToUpdate,
+        });
+
+        await tx.projectImages.deleteMany({
+          where: {
+            projectId: id,
+            id: { notIn: existingFileIds },
+          },
+        });
+
+        return tx.projects.findUnique({ where: { id }, include: { images: true } });
       });
     }
 

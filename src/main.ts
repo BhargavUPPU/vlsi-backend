@@ -10,7 +10,7 @@ async function bootstrap() {
   app.use(require('express').urlencoded({ limit: '200mb', extended: true }));
 
   // Enable CORS for frontend
-  app.enableCors();
+  app.enableCors('*');
 
   // Enable global validation
   app.useGlobalPipes(

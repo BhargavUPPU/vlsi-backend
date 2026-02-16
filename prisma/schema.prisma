@@ -234,7 +234,7 @@ model projects {
   Members        Json?
   Statement      String?         @db.Text
   Abstract       String?         @db.Text
-  Conclusion     String          @db.Text
+  Conclusion     String?         @db.Text
   Results        String?         @db.Text
   futureScope    String?         @db.Text
   referenceLinks Json?

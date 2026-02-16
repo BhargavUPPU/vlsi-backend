@@ -17,7 +17,6 @@ import {
 } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto } from './dto/create-project.dto';
-import { UpdateProjectDto } from './dto/update-project.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { SuperAdminGuard } from '../auth/guards/superadmin.guard';
 import {
@@ -32,7 +31,9 @@ export class ProjectsController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  @UseInterceptors(FileFieldsInterceptor([{ name: 'files', maxCount: 15 }]))
+  @UseInterceptors(
+    FileFieldsInterceptor([{ name: 'files', maxCount: 15 }], { limits: { fieldSize: 20 * 1024 * 1024 } }),
+  )
   create(
     @Body() createProjectDto: any,
     @UploadedFiles() uploadedFiles: { files?: Express.Multer.File[] },
@@ -68,10 +69,12 @@ export class ProjectsController {
 
   @UseGuards(JwtAuthGuard)
   @Put(':id')
-  @UseInterceptors(FileFieldsInterceptor([{ name: 'files', maxCount: 15 }]))
+  @UseInterceptors(
+    FileFieldsInterceptor([{ name: 'files', maxCount: 15 }], { limits: { fieldSize: 20 * 1024 * 1024 } }),
+  )
   update(
     @Param('id') id: string,
-    @Body() updateProjectDto: UpdateProjectDto,
+    @Body() updateProjectDto: any,
     @UploadedFiles() uploadedFiles: { files?: Express.Multer.File[] },
   ) {
     console.log('update() called for project', id, 'with payload', updateProjectDto);
@@ -103,7 +106,7 @@ export class ProjectsController {
   // Image endpoints
   @UseGuards(JwtAuthGuard)
   @Post(':id/images')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', { limits: { fieldSize: 20 * 1024 * 1024 } }))
   async uploadImage(
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,

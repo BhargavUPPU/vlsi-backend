@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsInt, IsDateString } from 'class-validator';
+import { IsString, IsNotEmpty, IsInt, IsDateString, IsOptional } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
 export class CreateTestDto {
@@ -46,13 +46,49 @@ export class CreateTestDto {
 }
 
 export class UpdateTestDto {
+  @IsOptional()
+  @IsString()
   title?: string;
+
+  @IsOptional()
+  @IsString()
   subject?: string;
+
+  @IsOptional()
+  @IsString()
   type?: string;
+
+  @IsOptional()
+  @IsString()
   status?: string;
+
+  @Transform(({ value }) => {
+    const parsed = parseInt(value, 10);
+    return isNaN(parsed) ? value : parsed;
+  })
+  @Type(() => Number)
+  @IsOptional()
+  @IsInt()
   noOfQuestions?: number;
-  duration?: number;
+
+  @Transform(({ value }) => {
+    const parsed = parseInt(value, 10);
+    return isNaN(parsed) ? value : parsed;
+  })
+  @Type(() => Number)
+  @IsOptional()
+  @IsInt()
+  duration?: number; // in minutes
+
+  @IsOptional()
+  @IsString()
   examLink?: string;
+
+  @IsOptional()
+  @IsDateString()
   date?: string;
+
+  @IsOptional()
+  @IsString()
   description?: string;
 }
