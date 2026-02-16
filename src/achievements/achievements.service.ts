@@ -64,15 +64,21 @@ export class AchievementsService {
       });
     }
 
+    const updateData: any = { ...updateAchievementDto };
+    if (mainImage) updateData.mainImage = new Uint8Array(mainImage);
+    if (newImages) updateData.images = {
+      create: newImages.map(img => ({ imageData: new Uint8Array(img) }))
+    };
+
+    // If no other fields are changing (e.g. only images were deleted), ensure
+    // the achievement's `updatedAt` is touched so clients see a new timestamp.
+    if (Object.keys(updateData).length === 0) {
+      updateData.updatedAt = new Date();
+    }
+
     return this.prisma.achievement.update({
       where: { id },
-      data: {
-        ...updateAchievementDto,
-        mainImage: mainImage ? new Uint8Array(mainImage) : undefined,
-        images: newImages ? {
-          create: newImages.map(img => ({ imageData: new Uint8Array(img) }))
-        } : undefined
-      },
+      data: updateData,
       include: { images: true }
     });
   }

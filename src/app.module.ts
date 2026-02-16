@@ -77,7 +77,7 @@ export class AppModule implements OnModuleInit {
           name: 'Super Administrator',
           password: hashedPassword,
           role: 'SUPERADMIN',
-          requirePasswordChange: true,
+          requirePasswordChange: false,
         },
       });
       console.log('✅ SUPER ADMIN CREATED (superadmin@vlsi.com / Vlsi@123)');
