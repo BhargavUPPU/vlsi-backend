@@ -66,7 +66,7 @@ export class AppModule implements OnModuleInit {
       where: { email: 'superadmin@vlsi.com' }
     });
 
-    const tempPassword = "Vlsi@123";
+    const tempPassword = "Vlsid@2026";
     const hashedPassword = await bcrypt.hash(tempPassword, 12);
 
     if (!superAdmin) {

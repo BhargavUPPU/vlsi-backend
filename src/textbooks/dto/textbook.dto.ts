@@ -8,6 +8,7 @@ export class CreateTextbookDto {
 
   @IsString()
   @IsNotEmpty()
+  @IsOptional()
   description: string;
 
   @IsString()

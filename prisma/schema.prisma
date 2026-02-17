@@ -63,7 +63,7 @@ model achievementImage {
 model announcement {
   id          String   @id @default(cuid())
   title       String
-  description String   @db.Text
+  description String?  @db.Text
   date        String
   time        String
   venue       String
@@ -103,7 +103,7 @@ model coreMembers {
 model event {
   id                    String      @id @default(cuid())
   title                 String
-  description           String      @db.Text
+  description           String?     @db.Text
   eventType             String?
   aboutEvent            String?     @db.Text
   eventRegistrationLink String?
@@ -145,7 +145,7 @@ model gatePyqs {
 model milestone {
   id          String   @id @default(cuid())
   title       String
-  description String   @db.Text
+  description String?  @db.Text
   date        DateTime
   icon        String?
   color       String   @default("bg-blue-500")
@@ -314,7 +314,7 @@ model test {
 model textBook {
   id          String   @id @default(cuid())
   name        String
-  description String   @db.Text
+  description String?  @db.Text
   subject     String
   author      String
   link        String

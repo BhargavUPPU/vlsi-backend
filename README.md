@@ -50,6 +50,30 @@ FRONTEND_URL="http://localhost:3000"
 MAX_FILE_SIZE=10485760 # 10MB in bytes
 ```
 
+### Local MySQL for Development
+
+If you don't have access to the remote DB (or want to develop locally), start a local MySQL container and point your `.env` at it. `.env` is already ignored by git.
+
+Run:
+
+```bash
+docker run -d --name vlsi-mysql \
+  -e MYSQL_ROOT_PASSWORD=rootpass \
+  -e MYSQL_DATABASE=defaultdb \
+  -p 3306:3306 \
+  mysql:8.0 --default-authentication-plugin=mysql_native_password
+
+# then set your .env to:
+# DATABASE_URL="mysql://root:rootpass@127.0.0.1:3306/defaultdb?ssl-mode=DISABLED"
+```
+
+After that, run:
+
+```bash
+npx prisma db push
+npx prisma generate
+```
+
 ## Database Setup
 
 ### Generate Prisma Client
