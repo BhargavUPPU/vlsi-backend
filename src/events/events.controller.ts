@@ -69,8 +69,23 @@ export class EventsController {
   findAll(
     @Query('status') status?: string,
     @Query('eventType') eventType?: string,
+    @Query('year') year?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('includeFiles') includeFiles?: string,
   ) {
-    return this.eventsService.findAll({ status, eventType });
+    const p = page ? parseInt(page, 10) : 1;
+    const l = limit ? parseInt(limit, 10) : 6;
+    const inc = includeFiles === 'true';
+
+    return this.eventsService.findAll({
+      status,
+      eventType,
+      year,
+      page: p,
+      limit: l,
+      includeFiles: inc,
+    });
   }
 
   @Get('upcoming')
@@ -190,5 +205,47 @@ export class EventsController {
   @Delete('files/:fileId')
   removeFile(@Param('fileId') fileId: string) {
     return this.eventsService.removeFile(fileId);
+  }
+
+  // Optimized image endpoints
+  @Get(':id/image/:fileIndex')
+  async getEventImage(
+    @Param('id') id: string,
+    @Param('fileIndex') fileIndex: string,
+    @Query('size') size?: string,
+    @Res({ passthrough: true }) res?: Response,
+  ) {
+    const index = parseInt(fileIndex, 10);
+    const imageBuffer = await this.eventsService.getEventImageByIndex(id, index, size);
+    
+    if (res) {
+      res.set({
+        'Content-Type': 'image/jpeg',
+        'Cache-Control': 'public, max-age=86400, immutable', // 24 hours
+        'ETag': `"event-${id}-${index}-${size || 'original'}"`,
+      });
+    }
+    
+    return new StreamableFile(imageBuffer);
+  }
+
+  @Get(':id/thumbnail/:fileIndex')
+  async getEventThumbnail(
+    @Param('id') id: string,
+    @Param('fileIndex') fileIndex: string,
+    @Res({ passthrough: true }) res?: Response,
+  ) {
+    const index = parseInt(fileIndex, 10);
+    const imageBuffer = await this.eventsService.getEventImageByIndex(id, index, '300');
+    
+    if (res) {
+      res.set({
+        'Content-Type': 'image/jpeg',
+        'Cache-Control': 'public, max-age=604800, immutable', // 7 days
+        'ETag': `"event-thumb-${id}-${index}"`,
+      });
+    }
+    
+    return new StreamableFile(imageBuffer);
   }
 }

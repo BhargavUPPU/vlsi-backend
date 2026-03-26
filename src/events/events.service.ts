@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import * as sharp from 'sharp';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
@@ -179,21 +180,86 @@ export class EventsService {
     });
   }
 
-  async findAll(filters?: { status?: string; eventType?: string }) {
+  async findAll(filters?: {
+    status?: string;
+    eventType?: string;
+    year?: string;
+    page?: number;
+    limit?: number;
+    includeFiles?: boolean;
+  }) {
     const where: any = {};
 
     if (filters?.status) where.status = filters.status;
     if (filters?.eventType) where.eventType = filters.eventType;
 
-    return this.prisma.event.findMany({
+    // Year filter - compute inclusive start/end dates
+    if (filters?.year) {
+      const y = parseInt(filters.year, 10);
+      if (!isNaN(y)) {
+        const start = new Date(`${y}-01-01T00:00:00.000Z`);
+        const end = new Date(`${y + 1}-01-01T00:00:00.000Z`);
+        where.eventDate = { gte: start, lt: end };
+      }
+    }
+
+    const page = filters?.page && filters.page > 0 ? filters.page : 1;
+    const limit = filters?.limit && filters.limit > 0 ? filters.limit : undefined;
+
+    const total = await this.prisma.event.count({ where });
+
+    const events = await this.prisma.event.findMany({
       where,
-      include: {
-        files: true,
-      },
+      // Always include files when includeFiles is true OR not specified
+      include: filters?.includeFiles !== false ? { files: true } : undefined,
       orderBy: {
         eventDate: 'desc',
       },
+      take: limit,
+      skip: limit ? (page - 1) * limit : undefined,
     });
+
+    // Convert binary file data to base64 strings for safe JSON transport
+    const transformed = events.map((ev: any) => {
+      const out: any = { ...ev };
+
+      // convert certificate image if present
+      if (ev.eventCertificateImage) {
+        try {
+          const certBuf = Buffer.from(ev.eventCertificateImage || []);
+          out.eventCertificateImage = `data:image/jpeg;base64,${certBuf.toString('base64')}`;
+        } catch (e) {
+          out.eventCertificateImage = ev.eventCertificateImage;
+        }
+      }
+
+      // Always process files array and set initialImage
+      if (ev.files && Array.isArray(ev.files)) {
+        const files = ev.files.map((f) => {
+          try {
+            // Prisma may return Buffer or Uint8Array
+            const buf = Buffer.from((f as any).fileData || []);
+            return {
+              ...f,
+              // include full data URL so frontend can use it directly
+              fileData: `data:image/jpeg;base64,${buf.toString('base64')}`,
+            };
+          } catch (e) {
+            return f;
+          }
+        });
+        out.files = files;
+        out.initialImage = files.length > 0 ? files[0].fileData : out.eventCertificateImage || null;
+      } else {
+        // No files relation loaded, set initialImage to certificate if available
+        out.files = [];
+        out.initialImage = out.eventCertificateImage || null;
+      }
+
+      return out;
+    });
+
+    return { data: transformed, total };
   }
 
   async findOne(id: string) {
@@ -405,7 +471,7 @@ export class EventsService {
   // Query by date range
   async getUpcomingEvents() {
     const now = new Date();
-    return this.prisma.event.findMany({
+    const events = await this.prisma.event.findMany({
       where: {
         eventDate: {
           gte: now,
@@ -419,11 +485,45 @@ export class EventsService {
         eventDate: 'asc',
       },
     });
+
+    // convert binary to data URLs so frontend can use them directly
+    return events.map((ev: any) => {
+      const out: any = { ...ev };
+
+      if (ev.eventCertificateImage) {
+        try {
+          const certBuf = Buffer.from(ev.eventCertificateImage || []);
+          out.eventCertificateImage = `data:image/jpeg;base64,${certBuf.toString('base64')}`;
+        } catch (e) {
+          out.eventCertificateImage = ev.eventCertificateImage;
+        }
+      }
+
+      // Always process files array and set initialImage
+      if (ev.files && Array.isArray(ev.files)) {
+        const files = ev.files.map((f: any) => {
+          try {
+            const buf = Buffer.from(f.fileData || []);
+            return { ...f, fileData: `data:image/jpeg;base64,${buf.toString('base64')}` };
+          } catch (e) {
+            return f;
+          }
+        });
+        out.files = files;
+        out.initialImage = files.length > 0 ? files[0].fileData : out.eventCertificateImage || null;
+      } else {
+        // No files relation loaded, set initialImage to certificate if available
+        out.files = [];
+        out.initialImage = out.eventCertificateImage || null;
+      }
+
+      return out;
+    });
   }
 
   async getPastEvents() {
     const now = new Date();
-    return this.prisma.event.findMany({
+    const events = await this.prisma.event.findMany({
       where: {
         eventDate: {
           lt: now,
@@ -437,5 +537,90 @@ export class EventsService {
         eventDate: 'desc',
       },
     });
+
+    return events.map((ev: any) => {
+      const out: any = { ...ev };
+
+      if (ev.eventCertificateImage) {
+        try {
+          const certBuf = Buffer.from(ev.eventCertificateImage || []);
+          out.eventCertificateImage = `data:image/jpeg;base64,${certBuf.toString('base64')}`;
+        } catch (e) {
+          out.eventCertificateImage = ev.eventCertificateImage;
+        }
+      }
+
+      // Always process files array and set initialImage
+      if (ev.files && Array.isArray(ev.files)) {
+        const files = ev.files.map((f: any) => {
+          try {
+            const buf = Buffer.from(f.fileData || []);
+            return { ...f, fileData: `data:image/jpeg;base64,${buf.toString('base64')}` };
+          } catch (e) {
+            return f;
+          }
+        });
+        out.files = files;
+        out.initialImage = files.length > 0 ? files[0].fileData : out.eventCertificateImage || null;
+      } else {
+        // No files relation loaded, set initialImage to certificate if available
+        out.files = [];
+        out.initialImage = out.eventCertificateImage || null;
+      }
+
+      return out;
+    });
+  }
+
+  async getEventImageByIndex(eventId: string, fileIndex: number, size?: string): Promise<Buffer> {
+    const event = await this.prisma.event.findUnique({
+      where: { id: eventId },
+      include: {
+        files: {
+          orderBy: { id: 'asc' },
+          skip: fileIndex,
+          take: 1
+        }
+      },
+    });
+
+    if (!event) {
+      throw new NotFoundException(`Event ${eventId} not found`);
+    }
+
+    if (!event.files[0]) {
+      throw new NotFoundException(`File ${fileIndex} not found in event ${eventId}`);
+    }
+
+    const originalBuffer = Buffer.from(event.files[0].fileData);
+
+    // If no size specified, return original
+    if (!size) {
+      return originalBuffer;
+    }
+
+    // Resize image using Sharp
+    const sizeNumber = parseInt(size, 10);
+    if (isNaN(sizeNumber) || sizeNumber <= 0) {
+      return originalBuffer;
+    }
+
+    try {
+      const optimizedBuffer = await sharp(originalBuffer)
+        .resize(sizeNumber, sizeNumber, {
+          fit: 'cover',
+          position: 'center'
+        })
+        .jpeg({
+          quality: sizeNumber <= 300 ? 80 : 90, // Lower quality for thumbnails
+          progressive: true
+        })
+        .toBuffer();
+        
+      return optimizedBuffer;
+    } catch (error) {
+      console.warn('Sharp image processing failed, returning original:', error.message);
+      return originalBuffer;
+    }
   }
 }

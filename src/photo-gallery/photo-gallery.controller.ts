@@ -10,8 +10,11 @@ import {
   UploadedFiles,
   UseInterceptors,
   Query,
+  Res,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { FilesInterceptor } from '@nestjs/platform-express';
+import { StreamableFile } from '@nestjs/common';
 import { PhotoGalleryService } from './photo-gallery.service';
 import { CreatePhotoGalleryDto } from './dto/create-photo-gallery.dto';
 import { UpdatePhotoGalleryDto } from './dto/update-photo-gallery.dto';
@@ -48,8 +51,14 @@ export class PhotoGalleryController {
   }
 
   @Get()
-  findAll(@Query('category') category?: string) {
-    return this.photoGalleryService.findAll(category);
+  findAll(
+    @Query('category') category?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const p = page ? parseInt(page, 10) : 1;
+    const l = limit ? parseInt(limit, 10) : undefined;
+    return this.photoGalleryService.findAll({ category, page: p, limit: l });
   }
 
   @Get(':id')
@@ -95,5 +104,49 @@ export class PhotoGalleryController {
   async getImages(@Param('id') id: string) {
     const imagesData = await this.photoGalleryService.getImages(id);
     return imagesData.map((data) => Buffer.from(data));
+  }
+
+  @Get(':id/image/:imageIndex')
+  async getImage(
+    @Param('id') id: string,
+    @Param('imageIndex') imageIndex: string,
+    @Query('size') size?: string,
+    @Res({ passthrough: true }) res?: Response,
+  ) {
+    const index = parseInt(imageIndex, 10);
+    const imageBuffer = await this.photoGalleryService.getImageByIndex(id, index, size);
+    
+    if (res) {
+      // Set caching headers for better performance
+      res.set({
+        'Content-Type': 'image/jpeg',
+        'Cache-Control': 'public, max-age=86400, immutable', // 24 hours
+        'ETag': `"gallery-${id}-${index}-${size || 'original'}"`,
+      });
+    }
+    
+    return new StreamableFile(imageBuffer);
+  }
+
+  @Get(':id/thumbnail/:imageIndex')
+  async getThumbnail(
+    @Param('id') id: string,
+    @Param('imageIndex') imageIndex: string,
+    @Query('size') size?: string,
+    @Res({ passthrough: true }) res?: Response,
+  ) {
+    const index = parseInt(imageIndex, 10);
+    // Use provided size or default to 1200 for high-quality thumbnails
+    const imageBuffer = await this.photoGalleryService.getImageByIndex(id, index, size || '1200');
+    
+    if (res) {
+      res.set({
+        'Content-Type': 'image/jpeg',
+        'Cache-Control': 'public, max-age=604800, immutable', // 7 days for thumbnails
+        'ETag': `"gallery-thumb-${id}-${index}-${size || '1200'}"`,
+      });
+    }
+    
+    return new StreamableFile(imageBuffer);
   }
 }

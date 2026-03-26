@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import * as sharp from 'sharp';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
@@ -112,22 +113,33 @@ export class ProjectsService {
     status?: string;
     category?: string;
     academicYear?: string;
+    page?: number;
+    limit?: number;
   }) {
+    const page = filters?.page && filters.page > 0 ? filters.page : 1;
+    const limit = filters?.limit && filters.limit > 0 ? filters.limit : undefined;
+    
     const where: any = {};
     
     if (filters?.status) where.status = filters.status;
     if (filters?.category) where.category = filters.category;
     if (filters?.academicYear) where.academicYear = filters.academicYear;
 
-    return this.prisma.projects.findMany({
-      where,
-      include: {
-        images: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    const [data, total] = await Promise.all([this.prisma.projects.findMany({
+        where,
+        include: {
+          images: { select: { id: true } }, // Only include image IDs, not full data
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        take: limit,
+        skip: limit ? (page - 1) * limit : undefined,
+      }),
+      this.prisma.projects.count({ where })
+    ]);
+
+    return { data, total, page, limit: limit || total };
   }
 
   async findOne(id: string) {
@@ -357,5 +369,57 @@ export class ProjectsService {
         createdAt: 'desc',
       },
     });
+  }
+
+  async getProjectImageByIndex(projectId: string, imageIndex: number, size?: string): Promise<Buffer> {
+    const project = await this.prisma.projects.findUnique({
+      where: { id: projectId },
+      include: {
+        images: {
+          orderBy: { id: 'asc' },
+          skip: imageIndex,
+          take: 1
+        }
+      },
+    });
+
+    if (!project) {
+      throw new NotFoundException(`Project ${projectId} not found`);
+    }
+
+    if (!project.images[0]) {
+      throw new NotFoundException(`Image ${imageIndex} not found in project ${projectId}`);
+    }
+
+    const originalBuffer = Buffer.from(project.images[0].fileData);
+
+    // If no size specified, return original
+    if (!size) {
+      return originalBuffer;
+    }
+
+    // Resize image using Sharp
+    const sizeNumber = parseInt(size, 10);
+    if (isNaN(sizeNumber) || sizeNumber <= 0) {
+      return originalBuffer;
+    }
+
+    try {
+      const optimizedBuffer = await sharp(originalBuffer)
+        .resize(sizeNumber, sizeNumber, {
+          fit: 'cover',
+          position: 'center'
+        })
+        .jpeg({
+          quality: sizeNumber <= 300 ? 80 : 90, // Lower quality for thumbnails
+          progressive: true
+        })
+        .toBuffer();
+        
+      return optimizedBuffer;
+    } catch (error) {
+      console.warn('Sharp image processing failed, returning original:', error.message);
+      return originalBuffer;
+    }
   }
 }

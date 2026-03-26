@@ -9,6 +9,8 @@ import {
   UseGuards,
   UploadedFiles,
   UseInterceptors,
+  Query,
+  Res,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { TeamPhotosService } from './team-photos.service';
@@ -49,6 +51,41 @@ export class TeamPhotosController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.teamPhotosService.findOne(id);
+  }
+
+  @Get(':id/image/:index')
+  async serveImage(
+    @Param('id') id: string,
+    @Param('index') index: string,
+    @Query('size') size?: string,
+    @Res() res?,
+  ) {
+    const idx = parseInt(index || '0', 10);
+    const s = size ? parseInt(size, 10) : undefined;
+    const buf = await this.teamPhotosService.getImageBuffer(id, idx, s);
+    
+    res.setHeader('Content-Type', 'image/jpeg');
+    res.setHeader('Cache-Control', 'public, max-age=86400, immutable'); // 24 hours
+    res.setHeader('ETag', `"team-${id}-${idx}-${s || 'original'}"`);
+    res.send(buf);
+  }
+
+  @Get(':id/thumbnail/:index')
+  async getThumbnail(
+    @Param('id') id: string,
+    @Param('index') index: string,
+    @Query('size') size?: string,
+    @Res() res?,
+  ) {
+    const idx = parseInt(index || '0', 10);
+    // Default to 1200px for high-quality thumbnails
+    const s = size ? parseInt(size, 10) : 1200;
+    const buf = await this.teamPhotosService.getImageBuffer(id, idx, s);
+    
+    res.setHeader('Content-Type', 'image/jpeg');
+    res.setHeader('Cache-Control', 'public, max-age=604800, immutable'); // 7 days for thumbnails
+    res.setHeader('ETag', `"team-thumb-${id}-${idx}-${s}"`);
+    res.send(buf);
   }
 
   @UseGuards(JwtAuthGuard)

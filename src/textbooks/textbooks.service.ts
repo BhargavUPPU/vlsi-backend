@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTextbookDto, UpdateTextbookDto } from './dto/textbook.dto';
+import * as sharp from 'sharp';
 
 @Injectable()
 export class TextbooksService {
@@ -73,5 +74,27 @@ export class TextbooksService {
     const textbook = await this.findOne(id);
     if (!textbook.image) throw new NotFoundException(`Image not found for textbook ${id}`);
     return textbook.image;
+  }
+
+  async getThumbnail(id: string,) {
+    const textbook = await this.findOne(id);
+    if (!textbook.image) throw new NotFoundException(`Image not found for textbook ${id}`);
+
+    try {
+      return await sharp(Buffer.from(textbook.image))
+      .resize(600, Math.round(610 * 0.55), { 
+        fit: 'contain', 
+        position: 'center'
+      })
+        .jpeg({ 
+          quality: 92, 
+          progressive: true,
+          mozjpeg: true
+        })
+        .toBuffer();
+    } catch (error) {
+      console.error(`Thumbnail generation error for ${id}:`, error);
+      throw new NotFoundException(`Failed to generate thumbnail for textbook ${id}`);
+    }
   }
 }

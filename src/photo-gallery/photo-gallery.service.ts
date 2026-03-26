@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import * as sharp from 'sharp';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePhotoGalleryDto } from './dto/create-photo-gallery.dto';
 import { UpdatePhotoGalleryDto } from './dto/update-photo-gallery.dto';
@@ -24,7 +25,7 @@ export class PhotoGalleryService {
         priority: createDto.priority || 0,
         images: {
           create: imageBuffers.map((buffer, index) => ({
-            imageData: new Uint8Array(buffer),
+            imageData: Buffer.from(buffer),
             displayOrder: index,
           })),
         },
@@ -33,21 +34,37 @@ export class PhotoGalleryService {
     });
   }
 
-  async findAll(category?: string) {
-    const where = category ? { category: category as any, isActive: true } : { isActive: true };
+  async findAll(filters?: { category?: string; page?: number; limit?: number; includeImages?: boolean }) {
+    const page = filters?.page && filters.page > 0 ? filters.page : 1;
+    const limit = filters?.limit && filters.limit > 0 ? filters.limit : undefined;
+    const includeImages = filters?.includeImages === true;
     
-    return this.prisma.photoGallery.findMany({
-      where,
-      include: { 
-        images: {
-          orderBy: { displayOrder: 'asc' }
-        } 
-      },
-      orderBy: [
-        { priority: 'desc' },
-        { createdAt: 'desc' }
-      ],
-    });
+    const where = filters?.category ? { category: filters.category as any, isActive: true } : { isActive: true };
+    
+    const [data, total] = await Promise.all([
+      this.prisma.photoGallery.findMany({
+        where,
+        include: includeImages ? { 
+          images: {
+            orderBy: { displayOrder: 'asc' }
+          } 
+        } : {
+          images: {
+            select: { id: true, displayOrder: true, caption: true }, // Only metadata, no image data
+            orderBy: { displayOrder: 'asc' }
+          }
+        },
+        orderBy: [
+          { priority: 'desc' },
+          { createdAt: 'desc' }
+        ],
+        take: limit,
+        skip: limit ? (page - 1) * limit : undefined,
+      }),
+      this.prisma.photoGallery.count({ where })
+    ]);
+
+    return { data, total, page, limit: limit || total };
   }
 
   async findOne(id: string) {
@@ -84,9 +101,9 @@ export class PhotoGalleryService {
         where: { id },
         data: {
           ...updateDto,
-          images: {
+            images: {
             create: imageBuffers.map((buffer, index) => ({
-              imageData: new Uint8Array(buffer),
+              imageData: Buffer.from(buffer),
               displayOrder: index,
             })),
           },
@@ -130,5 +147,54 @@ export class PhotoGalleryService {
     return gallery.images
       .sort((a, b) => a.displayOrder - b.displayOrder)
       .map(img => img.imageData);
+  }
+
+  async getImageByIndex(id: string, imageIndex: number, size?: string): Promise<Buffer> {
+    const gallery = await this.prisma.photoGallery.findUnique({
+      where: { id },
+      include: {
+        images: {
+          where: { displayOrder: imageIndex },
+          select: { imageData: true }
+        }
+      },
+    });
+
+    if (!gallery || !gallery.images[0]) {
+      throw new NotFoundException(`Image ${imageIndex} not found in gallery ${id}`);
+    }
+
+    const originalBuffer = Buffer.from(gallery.images[0].imageData);
+
+    // If no size specified, return original
+    if (!size) {
+      return originalBuffer;
+    }
+
+    // Resize image using Sharp
+    const sizeNumber = parseInt(size, 10);
+    if (isNaN(sizeNumber) || sizeNumber <= 0) {
+      return originalBuffer;
+    }
+
+    try {
+      // For high-quality thumbnails, maintain aspect ratio while covering the area
+      const optimizedBuffer = await sharp(originalBuffer)
+        .resize(sizeNumber, Math.round(sizeNumber * 0.75), {
+          fit: 'contain',
+          position: 'center'
+        })
+        .jpeg({
+          quality: 90, // High quality for all sizes
+          progressive: true,
+          mozjpeg: true
+        })
+        .toBuffer();
+        
+      return optimizedBuffer;
+    } catch (error) {
+      console.warn('Sharp image processing failed, returning original:', error.message);
+      return originalBuffer;
+    }
   }
 }

@@ -48,8 +48,12 @@ export class ProjectsController {
     @Query('status') status?: string,
     @Query('category') category?: string,
     @Query('academicYear') academicYear?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
-    return this.projectsService.findAll({ status, category, academicYear });
+    const p = page ? parseInt(page, 10) : 1;
+    const l = limit ? parseInt(limit, 10) : undefined;
+    return this.projectsService.findAll({ status, category, academicYear, page: p, limit: l });
   }
 
   @Get('year/:year')
@@ -131,5 +135,47 @@ export class ProjectsController {
   @Delete('images/:imageId')
   removeImage(@Param('imageId') imageId: string) {
     return this.projectsService.removeImage(imageId);
+  }
+
+  // Optimized image endpoints
+  @Get(':id/image/:imageIndex')
+  async getProjectImage(
+    @Param('id') id: string,
+    @Param('imageIndex') imageIndex: string,
+    @Query('size') size?: string,
+    @Res({ passthrough: true }) res?: Response,
+  ) {
+    const index = parseInt(imageIndex, 10);
+    const imageBuffer = await this.projectsService.getProjectImageByIndex(id, index, size);
+    
+    if (res) {
+      res.set({
+        'Content-Type': 'image/jpeg',
+        'Cache-Control': 'public, max-age=86400, immutable', // 24 hours
+        'ETag': `"project-${id}-${index}-${size || 'original'}"`,
+      });
+    }
+    
+    return new StreamableFile(imageBuffer);
+  }
+
+  @Get(':id/thumbnail/:imageIndex')
+  async getProjectThumbnail(
+    @Param('id') id: string,
+    @Param('imageIndex') imageIndex: string,
+    @Res({ passthrough: true }) res?: Response,
+  ) {
+    const index = parseInt(imageIndex, 10);
+    const imageBuffer = await this.projectsService.getProjectImageByIndex(id, index, '300');
+    
+    if (res) {
+      res.set({
+        'Content-Type': 'image/jpeg',
+        'Cache-Control': 'public, max-age=604800, immutable', // 7 days
+        'ETag': `"project-thumb-${id}-${index}"`,
+      });
+    }
+    
+    return new StreamableFile(imageBuffer);
   }
 }

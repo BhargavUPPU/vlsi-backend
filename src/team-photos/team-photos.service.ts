@@ -119,4 +119,36 @@ export class TeamPhotosService {
     const photo = await this.findOne(id);
     return photo.images.map(img => img.imageData);
   }
+
+  async getImageBuffer(id: string, index = 0, size?: number) {
+    const photo = await this.findOne(id);
+    const img = photo.images?.[index];
+    if (!img) throw new NotFoundException('Image not found');
+    const buffer = Buffer.from(img.imageData as any);
+
+    if (!size) return buffer;
+
+    // Perform high-quality resizing using sharp
+    try {
+      // lazy-load sharp to avoid crash if not installed
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const sharp = require('sharp');
+      const resized = await sharp(buffer)
+        .resize(size, Math.round(size * 0.40), { 
+          fit: 'contain', 
+          position: 'center'
+        })
+        .jpeg({ 
+          quality: 95, 
+          progressive: true,
+          mozjpeg: true 
+        })
+        .toBuffer();
+      return resized;
+    } catch (err) {
+      console.error('Sharp processing failed:', err.message);
+      // if sharp not available or resize failed, return original buffer
+      return buffer;
+    }
+  }
 }

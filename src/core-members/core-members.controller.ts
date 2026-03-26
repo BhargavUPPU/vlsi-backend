@@ -11,6 +11,7 @@ import {
   Res,
   StreamableFile,
   Put,
+  Query,
 } from '@nestjs/common';
 import { CoreMembersService } from './core-members.service';
 import { CreateCoreMemberDto } from './dto/create-core-member.dto';
@@ -38,8 +39,17 @@ export class CoreMembersController {
   }
 
   @Get()
-  findAll() {
-    return this.coreMembersService.findAll();
+  findAll(
+    @Query('academicYear') academicYear?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const opts: any = {};
+    if (academicYear) opts.academicYear = academicYear;
+    if (page) opts.page = parseInt(page as any, 10);
+    if (limit) opts.limit = parseInt(limit as any, 10);
+
+    return this.coreMembersService.findAll(opts);
   }
 
   @Get('category/:category')
@@ -66,13 +76,32 @@ export class CoreMembersController {
   async getImage(
     @Param('id') id: string,
     @Res({ passthrough: true }) res: Response,
+    @Query('size') size?: string,
   ) {
-    const image = await this.coreMembersService.getImage(id);
+    const s = size ? parseInt(size, 10) : undefined;
+    const buf = await this.coreMembersService.getImageBuffer(id, s);
     res.set({
       'Content-Type': 'image/jpeg',
+      'Cache-Control': 'public, max-age=86400, immutable', // 24 hours
+      'ETag': `"member-${id}-${size || 'original'}"`,
       'Content-Disposition': 'inline',
     });
-    return new StreamableFile(Buffer.from(image));
+    return new StreamableFile(buf);
+  }
+
+  @Get(':id/thumbnail')
+  async getThumbnail(
+    @Param('id') id: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const buf = await this.coreMembersService.getImageBuffer(id, 300);
+    res.set({
+      'Content-Type': 'image/jpeg',
+      'Cache-Control': 'public, max-age=604800, immutable', // 7 days
+      'ETag': `"member-thumb-${id}"`,
+      'Content-Disposition': 'inline',
+    });
+    return new StreamableFile(buf);
   }
 
   @UseGuards(JwtAuthGuard)

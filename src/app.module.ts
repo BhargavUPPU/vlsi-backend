@@ -25,7 +25,7 @@ import { AnnouncementsModule } from './announcements/announcements.module';
 import { AchievementsModule } from './achievements/achievements.module';
 import { PhotoGalleryModule } from './photo-gallery/photo-gallery.module';
 import { MilestonesModule } from './milestones/milestones.module';
-
+import { DashboardModule } from './dashboard/dashboard.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -51,7 +51,8 @@ import { MilestonesModule } from './milestones/milestones.module';
     AnnouncementsModule,
     AchievementsModule,
     PhotoGalleryModule,
-    MilestonesModule
+    MilestonesModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],
@@ -80,7 +81,7 @@ export class AppModule implements OnModuleInit {
           requirePasswordChange: false,
         },
       });
-      console.log('✅ SUPER ADMIN CREATED (superadmin@vlsi.com / Vlsi@123)');
+      console.log('✅ SUPER ADMIN CREATED (superadmin@vlsi.com / Vlsid@2026)');
     } else {
       console.log(`[AppModule] Super Admin exists. Resetting password to ensure it matches Vlsi@123...`);
       await this.prisma.user.update({
@@ -90,7 +91,7 @@ export class AppModule implements OnModuleInit {
           role: 'SUPERADMIN', // Ensure role is correct too
         },
       });
-      console.log('✅ SUPER ADMIN PASSWORD RESET (superadmin@vlsi.com / Vlsi@123)');
+      console.log('✅ SUPER ADMIN PASSWORD RESET (superadmin@vlsi.com / Vlsid@2026)');
     }
   }
 

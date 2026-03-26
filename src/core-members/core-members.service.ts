@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import * as sharp from 'sharp';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCoreMemberDto } from './dto/create-core-member.dto';
 import { UpdateCoreMemberDto } from './dto/update-core-member.dto';
@@ -46,13 +47,86 @@ export class CoreMembersService {
     return member;
   }
 
-  async findAll() {
-    return this.prisma.coreMembers.findMany({
-      orderBy: [
-        { academicYear: 'desc' },
-        { createdAt: 'desc' }
-      ],
+  async findAll(opts?: { page?: number; limit?: number; academicYear?: string }) {
+    const where: Prisma.coreMembersWhereInput = {};
+    if (opts?.academicYear) {
+      where.academicYear = opts.academicYear;
+    }
+
+    const total = await this.prisma.coreMembers.count({ where });
+
+    const orderBy = [
+      { academicYear: 'desc' as const },
+      { createdAt: 'desc' as const },
+    ];
+
+    if (opts?.page && opts?.limit) {
+      const page = Math.max(1, opts.page);
+      const limit = Math.max(1, opts.limit);
+      const skip = (page - 1) * limit;
+
+      const data = await this.prisma.coreMembers.findMany({
+        where,
+        orderBy,
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          name: true,
+          portfolio: true,
+          academicYear: true,
+          rollNumber: true,
+          sectionBranch: true,
+          category: true,
+          teamCategory: true,
+          memberShipId: true,
+        },
+      });
+
+      return { data, total };
+    }
+
+    const data = await this.prisma.coreMembers.findMany({
+      where,
+      orderBy,
+      select: {
+        id: true,
+        name: true,
+        portfolio: true,
+        academicYear: true,
+        rollNumber: true,
+        sectionBranch: true,
+        category: true,
+        teamCategory: true,
+        memberShipId: true,
+      },
     });
+
+    return { data, total };
+  }
+
+  async getImageBuffer(id: string, size?: number): Promise<Buffer> {
+    const member = await this.findOne(id);
+    if (!member.image) throw new NotFoundException(`Image not found for core member ${id}`);
+    const buffer = Buffer.from(member.image as any);
+
+    if (!size) return buffer;
+
+    try {
+      const optimizedBuffer = await sharp(buffer)
+        .resize(size, size, {
+          fit: 'cover',
+          position: 'center'
+        })
+        .jpeg({
+          quality: size <= 300 ? 80 : 90,
+          progressive: true
+        })
+        .toBuffer();
+      return optimizedBuffer;
+    } catch (err) {
+      return buffer;
+    }
   }
 
   async findOne(id: string) {

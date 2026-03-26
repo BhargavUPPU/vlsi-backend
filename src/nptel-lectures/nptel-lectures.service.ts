@@ -1,6 +1,7 @@
 // NPTEL Lectures - Simple resource with images
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import * as sharp from 'sharp';
 
 @Injectable()
 export class NptelLecturesService {
@@ -63,5 +64,27 @@ export class NptelLecturesService {
     const lecture = await this.findOne(id);
     if (!lecture.image) throw new NotFoundException(`Image not found`);
     return lecture.image;
+  }
+
+  async getThumbnail(id: string) {
+    const lecture = await this.findOne(id);
+    if (!lecture.image) throw new NotFoundException(`Image not found`);
+
+    try {
+      return await sharp(Buffer.from(lecture.image))
+      .resize(600, Math.round(610 * 0.55), { 
+        fit: 'contain', 
+        position: 'center'
+      })
+        .jpeg({ 
+          quality: 92, 
+          progressive: true,
+          mozjpeg: true
+        })
+        .toBuffer();
+    } catch (error) {
+      console.error(`Thumbnail generation error for ${id}:`, error);
+      throw new NotFoundException(`Failed to generate thumbnail`);
+    }
   }
 }

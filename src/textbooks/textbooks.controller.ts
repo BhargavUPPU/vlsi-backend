@@ -67,6 +67,20 @@ export class TextbooksController {
     return new StreamableFile(Buffer.from(image));
   }
 
+  @Get(':id/thumbnail')
+  async getThumbnail(
+    @Param('id') id: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const thumbnail = await this.textbooksService.getThumbnail(id);
+    res.set({
+      'Content-Type': 'image/jpeg',
+      'Content-Disposition': 'inline',
+      'Cache-Control': 'public, max-age=604800, immutable', // 7 days cache
+    });
+    return new StreamableFile(Buffer.from(thumbnail));
+  }
+
   @UseGuards(JwtAuthGuard)
   @Put(':id')
   @UseInterceptors(FileInterceptor('image'))

@@ -61,13 +61,25 @@ export class AchievementsController {
   }
 
   @Get()
-  findAll(@Query('type') type?: string) {
-    return this.achievementsService.findAll(type);
+  findAll(
+    @Query('type') type?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const p = page ? parseInt(page, 10) : 1;
+    const l = limit ? parseInt(limit, 10) : undefined;
+    return this.achievementsService.findAll({ type, page: p, limit: l });
   }
 
   @Get('active')
-  findActive(@Query('type') type?: string) {
-    return this.achievementsService.findActive(type);
+  findActive(
+    @Query('type') type?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const p = page ? parseInt(page, 10) : 1;
+    const l = limit ? parseInt(limit, 10) : undefined;
+    return this.achievementsService.findActive({ type, page: p, limit: l });
   }
 
   @Get(':id')
@@ -162,7 +174,27 @@ export class AchievementsController {
       res.set({
         'Content-Type': 'image/jpeg',
         'Content-Disposition': 'inline',
-        'Cache-Control': 'public, max-age=3600',
+        'Cache-Control': 'public, max-age=86400, immutable', // Cache for 24 hours
+        'ETag': `"${imageId}"`,
+      });
+      return new StreamableFile(buffer);
+    } catch (error) {
+      res.status(404).send('Image not found');
+    }
+  }
+
+  @Get('thumbnail/:imageId')
+  async getAdditionalImageThumbnail(
+    @Param('imageId') imageId: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    try {
+      const buffer = await this.achievementsService.getAdditionalImageThumbnail(imageId);
+      res.set({
+        'Content-Type': 'image/jpeg',
+        'Content-Disposition': 'inline',
+        'Cache-Control': 'public, max-age=604800, immutable', // Cache for 7 days
+        'ETag': `"thumb-${imageId}"`,
       });
       return new StreamableFile(buffer);
     } catch (error) {
